@@ -97,7 +97,10 @@ public class WifiConnection extends Timer{
 
     @Override
     public void cancel() {
-        activity.unregisterReceiver(broadcastReceiver);
-        super.cancel();
+        if (broadcastReceiver != null) {
+            activity.unregisterReceiver(broadcastReceiver);
+            broadcastReceiver = null;
+            super.cancel();
+        }
     }
 }
