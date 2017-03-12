@@ -5,4 +5,6 @@ En este proyecto se abordará la problemática que surge en conocer la posición
 
 Para ello se tiene una aplicación en Android que analizará y medirá datos entre dos tecnologías de posicionamiento indoor: Trilateración por WiFi y por Bluetooth; esto con el fin de analizar cuál tecnología presenta mejores resultados en un ambiente dado y finalmente hacer un análisis a partir de estos datos. Dicho análisis estará presente en el informe final. 
 
+Bueno, relativamente eso tengo en mente... ahora que resulte es otra cosa. 
+
 Y eso.-
