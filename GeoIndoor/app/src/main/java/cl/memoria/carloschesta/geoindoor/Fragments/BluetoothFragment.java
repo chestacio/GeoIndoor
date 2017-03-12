@@ -6,7 +6,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -32,7 +35,7 @@ import cl.memoria.carloschesta.geoindoor.R;
  */
 public class BluetoothFragment extends Fragment {
 
-    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_ENABLE_BT = 1, PERMS_REQUEST_CODE = 123;
     private BluetoothAdapter mBluetoothAdapter;
     private static ArrayList<BluetoothLe> devicesList;
     private static ArrayList<String> MACList;
@@ -114,6 +117,7 @@ public class BluetoothFragment extends Fragment {
         adapter = new BluetoothLeAdapter(this.getContext(), devicesList);
         listViewBluetooth.setAdapter(adapter);
 
+
         connection = new BLEScan(this.getActivity(), mBluetoothAdapter);
 
         return v;
@@ -123,9 +127,14 @@ public class BluetoothFragment extends Fragment {
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser){
-            checkBluetoothLECompatibility();
 
-            connection.startScanLe(true);
+            if (hasPermissions()){
+                checkBluetoothLECompatibility();
+                connection.startScanLe(true);
+            }
+            else
+                requestPerms();
+
         }
         else{
             Log.i("TEST", "Invisible");
@@ -156,6 +165,63 @@ public class BluetoothFragment extends Fragment {
 
 
     }
+
+    private boolean hasPermissions() {
+        int res = 0;
+        String[] permissions = new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+
+        for (String perms : permissions) {
+            res = getActivity().checkCallingOrSelfPermission(perms);
+
+            if (!(res == PackageManager.PERMISSION_GRANTED))
+                return false;
+        }
+
+        return true;
+    }
+
+    private void requestPerms() {
+        String[] permissions = new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(permissions, PERMS_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        boolean allowed = true;
+
+        switch (requestCode) {
+
+            case PERMS_REQUEST_CODE:
+                for (int res : grantResults)
+                    // if user granted all permissions
+                    allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
+                break;
+
+            default:
+                // if user not granted permissions
+                allowed = false;
+                break;
+
+        }
+
+        if (allowed) {
+            // user granted all permissions so we can connect Bluetooth
+            checkBluetoothLECompatibility();
+            connection.startScanLe(true);
+        }
+        else {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                Toast.makeText(getContext(), "Permiso de Acceso coarse denegado", Toast.LENGTH_SHORT).show();
+            }
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                Toast.makeText(getContext(), "Permiso de Acceso fino denegado", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private void checkBluetoothLECompatibility(){
         AlertDialog.Builder alert = new AlertDialog.Builder(this.getActivity());
 
