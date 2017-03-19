@@ -1,13 +1,14 @@
 package cl.memoria.carloschesta.geoindoor.Fragments;
 
 
-import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.util.Log;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -16,20 +17,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Map;
+import java.util.ArrayList;
 
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
 import cl.memoria.carloschesta.geoindoor.R;
@@ -39,13 +37,22 @@ import cl.memoria.carloschesta.geoindoor.R;
  */
 public class MainFragment extends Fragment implements OnMapReadyCallback{
 
+    private final int MAX_ZOOM = 14;
+    private final int MIN_ZOOM = 11;
+    private final int INIT_ZOOM = 12;
+    private final int MAX_MARKERS = 3;
+    private final LatLng NORTHEAST = new LatLng(-0.02,-53.355);
+    private final LatLng SOUTHWEST = new LatLng(-0.09, -53.75);
+    private final LatLng INITIAL_POS_CAMERA = new LatLng(-0.0500001,-53.500001);
+    private final LatLng INITIAL_POS_MARKER = new LatLng(-0.0500001,-53.500001);
+
+    private ArrayList<Marker> arrayMarker;
     private GoogleMap gMap;
     private MapView mMapView;
     private File f;
     private TextView tvX;
     private TextView tvY;
-    private final int MAX_ZOOM = 14;
-    private final int MIN_ZOOM = 11;
+    private FloatingActionButton floatingActingButton;
 
 
     public MainFragment() {
@@ -59,8 +66,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
+        arrayMarker = new ArrayList<Marker>();
+
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
+
+        floatingActingButton = (FloatingActionButton) v.findViewById(R.id.floatingActingMainButton);
+        floatingActingButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_place_black_24dp));
 
         mMapView = (MapView) v.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -113,22 +125,113 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     private void setUpMap() {
         gMap.setMapType(GoogleMap.MAP_TYPE_NONE);
-        gMap.getUiSettings().setZoomControlsEnabled(true);
+        gMap.getUiSettings().setZoomControlsEnabled(false);
+        gMap.getUiSettings().setMapToolbarEnabled(false);
 
         // Initial camera position
-        CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(new LatLng(-0.106087,-53.766060), 12);
+        CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_CAMERA, INIT_ZOOM);
         gMap.moveCamera(upd);
+
+        // Zoom preferences
         gMap.setMaxZoomPreference(MAX_ZOOM);
         gMap.setMinZoomPreference(MIN_ZOOM);
-        LatLngBounds bounds = new LatLngBounds(new LatLng(-0.09, -53.75), new LatLng(-0.02,-53.355));
+
+        // Limit map bounds
+        LatLngBounds bounds = new LatLngBounds(SOUTHWEST, NORTHEAST);
         gMap.setLatLngBoundsForCameraTarget(bounds);
 
+        // Show a coordinates label when the map is clicked
         gMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
                 tvX.setText(String.valueOf(latLng.longitude));
                 tvY.setText(String.valueOf(latLng.latitude));
             }
+        });
+
+        gMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            // Use default InfoWindow frame
+            @Override
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+
+            // Defines the contents of the InfoWindow
+            @Override
+            public View getInfoContents(final Marker marker) {
+
+                // Getting view from the layout file info_window_layout
+                View v = getActivity().getLayoutInflater().inflate(R.layout.marker_info, null);
+
+                // Getting the position from the marker
+                LatLng latLng = marker.getPosition();
+
+                // Getting reference to the TextView to set longitude
+                TextView tvX = (TextView) v.findViewById(R.id.tvMarkerX);
+
+                // Getting reference to the TextView to set latitude
+                TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
+
+                // Setting the longitude
+                tvX.setText(String.valueOf(latLng.longitude).substring(0,7));
+
+                // Setting the latitude
+                tvY.setText(String.valueOf(latLng.latitude).substring(0,7));
+
+                // Returning the view containing InfoWindow contents
+                return v;
+            }
+        });
+
+        gMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {  }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+                // Getting view from the layout file info_window_layout
+                View v = getActivity().getLayoutInflater().inflate(R.layout.marker_info, null);
+
+                // Getting the position from the marker
+                LatLng latLng = marker.getPosition();
+
+                // Getting reference to the TextView to set longitude
+                TextView tvX = (TextView) v.findViewById(R.id.tvMarkerX);
+
+                // Getting reference to the TextView to set latitude
+                TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
+
+                // Setting the longitude
+                tvX.setText(String.valueOf(latLng.longitude).substring(0,7));
+
+                // Setting the latitude
+                tvY.setText(String.valueOf(latLng.latitude).substring(0,7));
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {  }
+        });
+
+        gMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                arrayMarker.remove(marker);
+                marker.remove();
+            }
+        });
+
+        floatingActingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (arrayMarker.size() != MAX_MARKERS) {
+                    Marker marker = gMap.addMarker(new MarkerOptions()
+                            .position(INITIAL_POS_MARKER)
+                            .draggable(true));
+                    arrayMarker.add(marker);
+                    }
+                }
+
         });
 
     }
