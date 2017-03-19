@@ -57,12 +57,12 @@ public class WifiFragment extends Fragment {
 
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
                 LayoutInflater inflater = getActivity().getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.bluetooth_config, null);
+                final View dialogView = inflater.inflate(R.layout.distance_settings, null);
                 dialogBuilder.setView(dialogView);
 
-                final EditText etD = (EditText) dialogView.findViewById(R.id.etBluetoothD);
-                final EditText etI = (EditText) dialogView.findViewById(R.id.etBluetoothI);
-                final EditText etJ = (EditText) dialogView.findViewById(R.id.etBluetoothJ);
+                final EditText etD = (EditText) dialogView.findViewById(R.id.etD);
+                final EditText etI = (EditText) dialogView.findViewById(R.id.etI);
+                final EditText etJ = (EditText) dialogView.findViewById(R.id.etJ);
 
                 final SharedPreferences prefs = getActivity().getSharedPreferences(
                         "cl.memoria.carloschesta.geoindoor.PREFERENCE_WIFI_CONFIG", Context.MODE_PRIVATE);

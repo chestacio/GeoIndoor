@@ -64,7 +64,18 @@
         android:layout_gravity="bottom" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/floatingActingMainButton"
+        android:id="@+id/floatingActingAddMarkerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="100dp"
+        android:layout_gravity="right|bottom" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/floatingActingSettingButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
 

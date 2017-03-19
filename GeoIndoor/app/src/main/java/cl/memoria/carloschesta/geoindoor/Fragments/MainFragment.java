@@ -1,14 +1,18 @@
 package cl.memoria.carloschesta.geoindoor.Fragments;
 
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -52,7 +56,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private File f;
     private TextView tvX;
     private TextView tvY;
-    private FloatingActionButton floatingActingButton;
+    private FloatingActionButton floatingActingAddMarkerButton;
+    private FloatingActionButton floatingActingSettingsButton;
 
 
     public MainFragment() {
@@ -71,8 +76,56 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
 
-        floatingActingButton = (FloatingActionButton) v.findViewById(R.id.floatingActingMainButton);
-        floatingActingButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_place_black_24dp));
+        floatingActingAddMarkerButton = (FloatingActionButton) v.findViewById(R.id.floatingActingAddMarkerButton);
+        floatingActingAddMarkerButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_add_location_black_24dp));
+        floatingActingSettingsButton = (FloatingActionButton) v.findViewById(R.id.floatingActingSettingButton);
+        floatingActingSettingsButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_settings_black_24dp));
+
+        floatingActingSettingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+                LayoutInflater inflater = getActivity().getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.distance_settings, null);
+                dialogBuilder.setView(dialogView);
+
+                final EditText etD = (EditText) dialogView.findViewById(R.id.etD);
+                final EditText etI = (EditText) dialogView.findViewById(R.id.etI);
+                final EditText etJ = (EditText) dialogView.findViewById(R.id.etJ);
+
+                final SharedPreferences prefs = getActivity().getSharedPreferences(
+                        "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
+
+                float d = prefs.getFloat("d", 0);
+                float i = prefs.getFloat("i", 0);
+                float j = prefs.getFloat("j", 0);
+
+                etD.setText(String.valueOf(d));
+                etI.setText(String.valueOf(i));
+                etJ.setText(String.valueOf(j));
+
+                dialogBuilder.setTitle("Set position");
+                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                        SharedPreferences.Editor editor = prefs.edit();
+
+                        editor.putFloat("d", Float.parseFloat(etD.getText().toString()));
+                        editor.putFloat("i", Float.parseFloat(etI.getText().toString()));
+                        editor.putFloat("j", Float.parseFloat(etJ.getText().toString()));
+
+                        editor.commit();
+                    }
+                });
+                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                    }
+                });
+                AlertDialog b = dialogBuilder.create();
+                b.show();
+            }
+        });
 
         mMapView = (MapView) v.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -221,7 +274,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             }
         });
 
-        floatingActingButton.setOnClickListener(new View.OnClickListener() {
+        floatingActingAddMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (arrayMarker.size() != MAX_MARKERS) {
