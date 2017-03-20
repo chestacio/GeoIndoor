@@ -41,14 +41,14 @@ import cl.memoria.carloschesta.geoindoor.R;
  */
 public class MainFragment extends Fragment implements OnMapReadyCallback{
 
-    private final int MAX_ZOOM = 14;
-    private final int MIN_ZOOM = 11;
-    private final int INIT_ZOOM = 12;
+    private final int MAX_ZOOM = 6;
+    private final int MIN_ZOOM = 1;
+    private final int INIT_ZOOM = 4;
     private final int MAX_MARKERS = 3;
-    private final LatLng NORTHEAST = new LatLng(-0.02,-53.355);
-    private final LatLng SOUTHWEST = new LatLng(-0.09, -53.75);
-    private final LatLng INITIAL_POS_CAMERA = new LatLng(-0.0500001,-53.500001);
-    private final LatLng INITIAL_POS_MARKER = new LatLng(-0.0500001,-53.500001);
+    private final LatLng NORTHEAST = new LatLng(32,141);
+    private final LatLng SOUTHWEST = new LatLng(5, 3);
+    private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
+    private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
 
     private ArrayList<Marker> arrayMarker;
     private GoogleMap gMap;
@@ -139,10 +139,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         }
 
         // Get a File from Assets reference to the MBTiles file.
-        f = new File(getActivity().getCacheDir()+"/parking.mbtiles");
+        f = new File(getActivity().getCacheDir()+"/parking_origin_0-145.mbtiles");
         if (!f.exists()) try {
 
-            InputStream is = getActivity().getAssets().open("parking.mbtiles");
+            InputStream is = getActivity().getAssets().open("parking_origin_0-145.mbtiles");
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
@@ -271,6 +271,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             public void onInfoWindowClick(Marker marker) {
                 arrayMarker.remove(marker);
                 marker.remove();
+
             }
         });
 
