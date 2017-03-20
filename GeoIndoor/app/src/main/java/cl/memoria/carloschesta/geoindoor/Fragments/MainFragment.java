@@ -55,6 +55,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng SOUTHWEST = new LatLng(5, 3);
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
     private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
+    private final String PARKING_FILE_NAME = "parking_origin_0-145_HD.mbtiles";
 
     private ArrayList<Device> arrayDevice;
     private GoogleMap gMap;
@@ -145,10 +146,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         }
 
         // Get a File from Assets reference to the MBTiles file.
-        f = new File(getActivity().getCacheDir()+"/parking_origin_0-145.mbtiles");
+        f = new File(getActivity().getCacheDir()+"/" + PARKING_FILE_NAME);
         if (!f.exists()) try {
 
-            InputStream is = getActivity().getAssets().open("parking_origin_0-145.mbtiles");
+            InputStream is = getActivity().getAssets().open(PARKING_FILE_NAME);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
