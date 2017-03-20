@@ -45,6 +45,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final int MIN_ZOOM = 1;
     private final int INIT_ZOOM = 4;
     private final int MAX_MARKERS = 3;
+    private final int DECIMALS = 2;
     private final LatLng NORTHEAST = new LatLng(32,141);
     private final LatLng SOUTHWEST = new LatLng(5, 3);
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
@@ -226,10 +227,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
 
                 // Setting the longitude
-                tvX.setText(String.valueOf(latLng.longitude).substring(0,7));
+                tvX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
 
                 // Setting the latitude
-                tvY.setText(String.valueOf(latLng.latitude).substring(0,7));
+                tvY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
 
                 // Returning the view containing InfoWindow contents
                 return v;
@@ -256,10 +257,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
 
                 // Setting the longitude
-                tvX.setText(String.valueOf(latLng.longitude).substring(0,7));
+                tvX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
 
                 // Setting the latitude
-                tvY.setText(String.valueOf(latLng.latitude).substring(0,7));
+                tvY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
             }
 
             @Override
@@ -283,10 +284,17 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                             .position(INITIAL_POS_MARKER)
                             .draggable(true));
                     arrayMarker.add(marker);
-                    }
+
+                    CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
+                    gMap.moveCamera(upd);
+                }
                 }
 
         });
 
+    }
+
+    private double truncateNumber(double value, int decimals) {
+        return Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
     }
 }
