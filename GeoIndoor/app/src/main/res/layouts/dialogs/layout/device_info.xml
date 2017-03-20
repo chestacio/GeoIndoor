@@ -9,18 +9,18 @@
         android:id="@+id/LinearLayoutMap"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="@dimen/activity_vertical_margin">
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:paddingTop="7dp">
+            android:layout_height="match_parent">
 
             <ImageView
                 android:id="@+id/imageView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:layout_width="57dp"
+                android:layout_height="match_parent"
                 app:srcCompat="@drawable/ic_place_black_24dp" />
         </LinearLayout>
 
@@ -44,6 +44,17 @@
                     android:layout_weight="1"
                     android:text="Y: " />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Type: " />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MAC: " />
+
             </LinearLayout>
 
         </LinearLayout>
@@ -60,18 +71,35 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tvMarkerX"
+                    android:id="@+id/tvDeviceX"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_weight="1" />
 
                 <TextView
-                    android:id="@+id/tvMarkerY"
+                    android:id="@+id/tvDeviceY"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/tvDeviceType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Device" />
+
+                <TextView
+                    android:id="@+id/tvDeviceMAC"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="00:11:22:33" />
 
             </LinearLayout>
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -13,7 +14,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -21,7 +25,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -35,7 +38,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
-import cl.memoria.carloschesta.geoindoor.Model.Node;
+import cl.memoria.carloschesta.geoindoor.Model.Device;
 import cl.memoria.carloschesta.geoindoor.R;
 
 /**
@@ -53,7 +56,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
     private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
 
-    private ArrayList<Node> arrayNode;
+    private ArrayList<Device> arrayDevice;
     private GoogleMap gMap;
     private MapView mMapView;
     private File f;
@@ -74,7 +77,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
-        arrayNode = new ArrayList<Node>();
+        arrayDevice = new ArrayList<Device>();
 
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
@@ -216,25 +219,22 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public View getInfoContents(final Marker marker) {
 
-                // Getting view from the layout file info_window_layout
-                View v = getActivity().getLayoutInflater().inflate(R.layout.marker_info, null);
+                View v = getActivity().getLayoutInflater().inflate(R.layout.device_info, null);
 
-                // Getting the position from the marker
                 LatLng latLng = marker.getPosition();
 
-                // Getting reference to the TextView to set longitude
-                TextView tvX = (TextView) v.findViewById(R.id.tvMarkerX);
+                TextView tvDeviceX = (TextView) v.findViewById(R.id.tvDeviceX);
+                TextView tvDeviceY = (TextView) v.findViewById(R.id.tvDeviceY);
+                TextView tvDeviceType = (TextView) v.findViewById(R.id.tvDeviceType);
+                TextView tvDeviceMAC = (TextView) v.findViewById(R.id.tvDeviceMAC);
 
-                // Getting reference to the TextView to set latitude
-                TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
+                Device device = findDeviceByMarker(marker);
 
-                // Setting the longitude
-                tvX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
+                tvDeviceX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
+                tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
+                tvDeviceType.setText(device.isAP() ? "Access Point" : "Beacon");
+                tvDeviceMAC.setText(device.getMAC());
 
-                // Setting the latitude
-                tvY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
-
-                // Returning the view containing InfoWindow contents
                 return v;
             }
         });
@@ -246,23 +246,15 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onMarkerDrag(Marker marker) {
 
-                // Getting view from the layout file info_window_layout
-                View v = getActivity().getLayoutInflater().inflate(R.layout.marker_info, null);
+                View v = getActivity().getLayoutInflater().inflate(R.layout.device_info, null);
 
-                // Getting the position from the marker
                 LatLng latLng = marker.getPosition();
 
-                // Getting reference to the TextView to set longitude
-                TextView tvX = (TextView) v.findViewById(R.id.tvMarkerX);
+                TextView tvDeviceX = (TextView) v.findViewById(R.id.tvDeviceX);
+                TextView tvDeviceY = (TextView) v.findViewById(R.id.tvDeviceY);
 
-                // Getting reference to the TextView to set latitude
-                TextView tvY = (TextView) v.findViewById(R.id.tvMarkerY);
-
-                // Setting the longitude
-                tvX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
-
-                // Setting the latitude
-                tvY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
+                tvDeviceX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
+                tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
             }
 
             @Override
@@ -273,13 +265,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onInfoWindowClick(Marker marker) {
                 int i = -1;
-                for (Node node : arrayNode) {
-                    if (node.getMarker().equals(marker))
-                        i = arrayNode.indexOf(node);
+                for (Device device : arrayDevice) {
+                    if (device.getMarker().equals(marker))
+                        i = arrayDevice.indexOf(device);
                 }
 
                 if (i != -1) {
-                    arrayNode.remove(i);
+                    arrayDevice.remove(i);
                     marker.remove();
                 }
 
@@ -289,19 +281,44 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         floatingActingAddMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //if (arrayMarker.size() != MAX_MARKERS) {
-                if (arrayNode.size() != MAX_MARKERS) {
-                    Marker marker = gMap.addMarker(new MarkerOptions()
-                            .position(INITIAL_POS_MARKER)
-                            .draggable(true));
 
-                    Node node = new Node();
-                    node.setMarker(marker);
-                    arrayNode.add(node);
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+                LayoutInflater inflater = getActivity().getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.add_device, null);
+                dialogBuilder.setView(dialogView);
 
-                    CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
-                    gMap.animateCamera(upd, 500, null);
-                }
+                final Switch switchDeviceType = (Switch) dialogView.findViewById(R.id.switchDeviceType);
+                Spinner spinnerDeviceList = (Spinner) dialogView.findViewById(R.id.spinnerDeviceList);
+
+                dialogBuilder.setTitle("Add device");
+                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        if (arrayDevice.size() != MAX_MARKERS) {
+                            Marker marker = gMap.addMarker(new MarkerOptions()
+                                    .position(INITIAL_POS_MARKER)
+                                    .draggable(true));
+
+                            Device device = new Device();
+                            device.setMarker(marker);
+                            device.setAP(switchDeviceType.isChecked());
+                            arrayDevice.add(device);
+
+                            CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
+                            gMap.animateCamera(upd, 500, null);
+                        }
+                        else
+                            Toast.makeText(getContext(), "Maximum number of devices reached", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                    }
+                });
+                AlertDialog b = dialogBuilder.create();
+                b.show();
+
                 }
 
         });
@@ -310,5 +327,14 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     private double truncateNumber(double value, int decimals) {
         return Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    }
+
+    @Nullable
+    private Device findDeviceByMarker(Marker marker) {
+        for (Device device : arrayDevice) {
+            if (device.getMarker().equals(marker))
+                return device;
+        }
+        return null;
     }
 }

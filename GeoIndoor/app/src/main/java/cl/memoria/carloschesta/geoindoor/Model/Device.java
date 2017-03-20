@@ -6,11 +6,17 @@ import com.google.android.gms.maps.model.Marker;
  * Created by carlos on 20-03-17.
  */
 
-public class Node {
+public class Device {
     private Marker marker;
     private boolean isAP;
+    private WiFi wifi;
+    private BluetoothLe bluetoothLe;
     private String MAC;
-    private int id;
+
+    public Device() {
+        isAP = true;
+        MAC = "00:11:22:33";
+    }
 
     public String getMAC() {
         return MAC;
@@ -20,12 +26,20 @@ public class Node {
         this.MAC = MAC;
     }
 
-    public int getId() {
-        return id;
+    public WiFi getWifi() {
+        return wifi;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setWifi(WiFi wifi) {
+        this.wifi = wifi;
+    }
+
+    public BluetoothLe getBluetoothLe() {
+        return bluetoothLe;
+    }
+
+    public void setBluetoothLe(BluetoothLe bluetoothLe) {
+        this.bluetoothLe = bluetoothLe;
     }
 
     public Marker getMarker() {
