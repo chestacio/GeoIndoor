@@ -7,9 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
-import android.text.LoginFilter;
 import android.util.Log;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 import java.util.Timer;
@@ -29,6 +29,7 @@ public class WifiConnection extends Timer{
     private List<ScanResult> results;
     private int size;
     private Timer timer;
+    private double APList[] = {0.0, 0.0, 0.0};
 
     public WifiConnection(Activity activity, WifiManager wifiManager) {
         this.activity = activity;
@@ -93,6 +94,17 @@ public class WifiConnection extends Timer{
     private double calculateDistance(double signalLevelInDb, double freqInMHz) {
         double exp = (27.55 - (20 * Math.log10(freqInMHz)) + Math.abs(signalLevelInDb)) / 20.0;
         return Math.pow(10.0, exp);
+    }
+
+    public LatLng getCurrentLocation(double d, double i, double j){
+        double r1 = APList[0];
+        double r2 = APList[1];
+        double r3 = APList[2];
+
+        double x = (Math.pow(r1, 2) - Math.pow(r2, 2) + Math.pow(d, 2))/(2*d);
+        double y = (Math.pow(r1, 2) - Math.pow(r3, 2) + Math.pow(i, 2) + Math.pow(j, 2))/(2*j) - (i/j) * x;
+
+        return new LatLng(y, x);
     }
 
     @Override
