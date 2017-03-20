@@ -21,6 +21,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -34,6 +35,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
+import cl.memoria.carloschesta.geoindoor.Model.Node;
 import cl.memoria.carloschesta.geoindoor.R;
 
 /**
@@ -51,7 +53,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
     private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
 
-    private ArrayList<Marker> arrayMarker;
+    private ArrayList<Node> arrayNode;
     private GoogleMap gMap;
     private MapView mMapView;
     private File f;
@@ -72,7 +74,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
-        arrayMarker = new ArrayList<Marker>();
+        arrayNode = new ArrayList<Node>();
 
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
@@ -270,8 +272,16 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         gMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                arrayMarker.remove(marker);
-                marker.remove();
+                int i = -1;
+                for (Node node : arrayNode) {
+                    if (node.getMarker().equals(marker))
+                        i = arrayNode.indexOf(node);
+                }
+
+                if (i != -1) {
+                    arrayNode.remove(i);
+                    marker.remove();
+                }
 
             }
         });
@@ -279,14 +289,18 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         floatingActingAddMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (arrayMarker.size() != MAX_MARKERS) {
+                //if (arrayMarker.size() != MAX_MARKERS) {
+                if (arrayNode.size() != MAX_MARKERS) {
                     Marker marker = gMap.addMarker(new MarkerOptions()
                             .position(INITIAL_POS_MARKER)
                             .draggable(true));
-                    arrayMarker.add(marker);
+
+                    Node node = new Node();
+                    node.setMarker(marker);
+                    arrayNode.add(node);
 
                     CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
-                    gMap.moveCamera(upd);
+                    gMap.animateCamera(upd, 500, null);
                 }
                 }
 
