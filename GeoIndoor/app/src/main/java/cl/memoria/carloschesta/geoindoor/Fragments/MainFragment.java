@@ -25,6 +25,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 
 import cl.memoria.carloschesta.geoindoor.Adapter.DeviceSelectAdapter;
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
+import cl.memoria.carloschesta.geoindoor.Libraries.SVGtoBitmap;
 import cl.memoria.carloschesta.geoindoor.Model.Device;
 import cl.memoria.carloschesta.geoindoor.R;
 
@@ -61,7 +63,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
     private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
 
-    
+
     private ArrayList<Device> arrayDevicesCreated;
     private ArrayList<Device> arrayBeaconDevicesAvailable;
     private ArrayList<Device> arrayAPDevicesAvailable;
@@ -363,19 +365,29 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
 
-                            Marker marker = gMap.addMarker(new MarkerOptions()
-                                    .position(INITIAL_POS_MARKER)
-                                    .draggable(true));
+                            Marker marker;
 
                             Device device = (Device) spinnerDeviceList.getSelectedItem();
+
+
+                            if (device.isAP()) {
+                                marker = gMap.addMarker(new MarkerOptions()
+                                        .position(INITIAL_POS_MARKER)
+                                        .draggable(true)
+                                        .icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_wifi))));
+                                arrayAPDevicesAvailable.remove(device);
+                            }
+                            else {
+                                marker = gMap.addMarker(new MarkerOptions()
+                                        .position(INITIAL_POS_MARKER)
+                                        .draggable(true)
+                                        .icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon))));
+                                arrayBeaconDevicesAvailable.remove(device);
+                            }
+
                             device.setMarker(marker);
 
                             arrayDevicesCreated.add(device);
-
-                            if (device.isAP())
-                                arrayAPDevicesAvailable.remove(device);
-                            else
-                                arrayBeaconDevicesAvailable.remove(device);
 
                             adapter.notifyDataSetChanged();
 
