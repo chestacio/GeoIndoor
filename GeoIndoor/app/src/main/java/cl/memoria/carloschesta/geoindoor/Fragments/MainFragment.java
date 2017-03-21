@@ -63,8 +63,12 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private File f;
     private TextView tvX;
     private TextView tvY;
-    private FloatingActionButton floatingActingAddMarkerButton;
-    private FloatingActionButton floatingActingSettingsButton;
+    private FloatingActionButton faAddMarkerButton;
+    private FloatingActionButton faSettingsButton;
+    private FloatingActionButton faGetLocationButton;
+    private float distanceD;
+    private float distanceI;
+    private float distanceJ;
 
 
     public MainFragment() {
@@ -78,17 +82,27 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
+        final SharedPreferences prefs = getActivity().getSharedPreferences(
+                "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
+
+        distanceD = prefs.getFloat("distanceD", 0);
+        distanceI = prefs.getFloat("distanceI", 0);
+        distanceJ = prefs.getFloat("distanceJ", 0);
+
         arrayDevice = new ArrayList<Device>();
 
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
 
-        floatingActingAddMarkerButton = (FloatingActionButton) v.findViewById(R.id.floatingActingAddMarkerButton);
-        floatingActingAddMarkerButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_add_location_black_24dp));
-        floatingActingSettingsButton = (FloatingActionButton) v.findViewById(R.id.floatingActingSettingButton);
-        floatingActingSettingsButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_settings_black_24dp));
+        faAddMarkerButton = (FloatingActionButton) v.findViewById(R.id.faAddMarkerButton);
+        faSettingsButton = (FloatingActionButton) v.findViewById(R.id.faSettingButton);
+        faGetLocationButton = (FloatingActionButton) v.findViewById(R.id.faGetLocationButton);
 
-        floatingActingSettingsButton.setOnClickListener(new View.OnClickListener() {
+        faAddMarkerButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_add_location_black_24dp));
+        faSettingsButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_settings_black_24dp));
+        faGetLocationButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_my_location_black_24dp));
+
+        faSettingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
@@ -96,20 +110,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 final View dialogView = inflater.inflate(R.layout.distance_settings, null);
                 dialogBuilder.setView(dialogView);
 
-                final EditText etD = (EditText) dialogView.findViewById(R.id.etD);
-                final EditText etI = (EditText) dialogView.findViewById(R.id.etI);
-                final EditText etJ = (EditText) dialogView.findViewById(R.id.etJ);
+                final EditText etDistanceD = (EditText) dialogView.findViewById(R.id.etD);
+                final EditText etDistanceI = (EditText) dialogView.findViewById(R.id.etI);
+                final EditText etDistanceJ = (EditText) dialogView.findViewById(R.id.etJ);
 
-                final SharedPreferences prefs = getActivity().getSharedPreferences(
-                        "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
-
-                float d = prefs.getFloat("d", 0);
-                float i = prefs.getFloat("i", 0);
-                float j = prefs.getFloat("j", 0);
-
-                etD.setText(String.valueOf(d));
-                etI.setText(String.valueOf(i));
-                etJ.setText(String.valueOf(j));
+                etDistanceD.setText(String.valueOf(distanceD));
+                etDistanceI.setText(String.valueOf(distanceI));
+                etDistanceJ.setText(String.valueOf(distanceJ));
 
                 dialogBuilder.setTitle("Set position");
                 dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
@@ -117,9 +124,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                         SharedPreferences.Editor editor = prefs.edit();
 
-                        editor.putFloat("d", Float.parseFloat(etD.getText().toString()));
-                        editor.putFloat("i", Float.parseFloat(etI.getText().toString()));
-                        editor.putFloat("j", Float.parseFloat(etJ.getText().toString()));
+                        editor.putFloat("distanceD", Float.parseFloat(etDistanceD.getText().toString()));
+                        editor.putFloat("distanceI", Float.parseFloat(etDistanceI.getText().toString()));
+                        editor.putFloat("distanceJ", Float.parseFloat(etDistanceJ.getText().toString()));
 
                         editor.commit();
                     }
@@ -131,6 +138,23 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 });
                 AlertDialog b = dialogBuilder.create();
                 b.show();
+            }
+        });
+
+        faGetLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (distanceD == 0 || distanceI == 0 || distanceJ == 0) {
+                    Toast.makeText(getContext(), "Distances between devices need to be configured first", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (!areDevicesSameType(arrayDevice)){
+                    Toast.makeText(getContext(), "Added devices are not the same type", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
             }
         });
 
@@ -279,7 +303,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             }
         });
 
-        floatingActingAddMarkerButton.setOnClickListener(new View.OnClickListener() {
+        faAddMarkerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
@@ -337,5 +361,21 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 return device;
         }
         return null;
+    }
+
+    // Check if all the devices has the same type
+    private boolean areDevicesSameType(ArrayList<Device> arrayList) {
+
+        for (int i = 0; i < arrayList.size(); i++){
+            Device current = arrayList.get(i);
+
+            if (arrayList.size() > 1 && i > 0){
+                Device prev = arrayList.get(i - 1);
+
+                if (prev.isAP() != current.isAP())
+                    return false;
+            }
+        }
+        return true;
     }
 }
