@@ -12,10 +12,19 @@ public class Device {
     private WiFi wifi;
     private BluetoothLe bluetoothLe;
     private String MAC;
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public Device() {
-        isAP = true;
         MAC = "00:11:22:33";
+        name = "asdf";
     }
 
     public String getMAC() {

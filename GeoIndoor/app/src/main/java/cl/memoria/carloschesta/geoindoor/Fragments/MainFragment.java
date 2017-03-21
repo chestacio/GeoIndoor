@@ -37,6 +37,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import cl.memoria.carloschesta.geoindoor.Adapter.DeviceSelectAdapter;
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
 import cl.memoria.carloschesta.geoindoor.Model.Device;
 import cl.memoria.carloschesta.geoindoor.R;
@@ -56,8 +57,16 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
     private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
     private final String PARKING_FILE_NAME = "parking_origin_0-145_HD.mbtiles";
+    private final String LIGHTBLUE_MAC_BEACON = "C3:3C:D0:40:ED:64";
+    private final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
+    private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
+    private final String[] beaconsName = {"Light Blue", "Purple", "Green"};
 
-    private ArrayList<Device> arrayDevice;
+
+
+    private ArrayList<Device> arrayDevicesCreated;
+    private ArrayList<Device> arrayBeaconDevices;
+    private ArrayList<Device> arrayAPDevices;
     private GoogleMap gMap;
     private MapView mMapView;
     private File f;
@@ -82,6 +91,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
 
+        // Import local preferences (distances between Devices)
         final SharedPreferences prefs = getActivity().getSharedPreferences(
                 "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
 
@@ -89,7 +99,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         distanceI = prefs.getFloat("distanceI", 0);
         distanceJ = prefs.getFloat("distanceJ", 0);
 
-        arrayDevice = new ArrayList<Device>();
 
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
@@ -139,6 +148,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 AlertDialog b = dialogBuilder.create();
                 b.show();
             }
+
         });
 
         faGetLocationButton.setOnClickListener(new View.OnClickListener() {
@@ -150,7 +160,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     return;
                 }
 
-                if (!areDevicesSameType(arrayDevice)){
+                if (!areDevicesSameType(arrayDevicesCreated)){
                     Toast.makeText(getContext(), "Added devices are not the same type", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -183,6 +193,14 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             fos.write(buffer);
             fos.close();
         } catch (Exception e) { throw new RuntimeException(e); }
+
+
+        arrayDevicesCreated = new ArrayList<Device>();
+        arrayBeaconDevices = new ArrayList<Device>();
+        arrayAPDevices = new ArrayList<Device>();
+
+        // Load initial Beacon devices
+        InitDevices();
 
         return v;
     }
@@ -252,6 +270,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 TextView tvDeviceY = (TextView) v.findViewById(R.id.tvDeviceY);
                 TextView tvDeviceType = (TextView) v.findViewById(R.id.tvDeviceType);
                 TextView tvDeviceMAC = (TextView) v.findViewById(R.id.tvDeviceMAC);
+                TextView tvDeviceName = (TextView) v.findViewById(R.id.tvDeviceName);
 
                 Device device = findDeviceByMarker(marker);
 
@@ -259,6 +278,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
                 tvDeviceType.setText(device.isAP() ? "Access Point" : "Beacon");
                 tvDeviceMAC.setText(device.getMAC());
+                tvDeviceName.setText(device.getName());
 
                 return v;
             }
@@ -290,13 +310,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onInfoWindowClick(Marker marker) {
                 int i = -1;
-                for (Device device : arrayDevice) {
+                for (Device device : arrayDevicesCreated) {
                     if (device.getMarker().equals(marker))
-                        i = arrayDevice.indexOf(device);
+                        i = arrayDevicesCreated.indexOf(device);
                 }
 
                 if (i != -1) {
-                    arrayDevice.remove(i);
+                    arrayDevicesCreated.remove(i);
                     marker.remove();
                 }
 
@@ -307,47 +327,112 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onClick(View view) {
 
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-                LayoutInflater inflater = getActivity().getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.add_device, null);
-                dialogBuilder.setView(dialogView);
+                if (arrayDevicesCreated.size() != MAX_MARKERS) {
 
-                final Switch switchDeviceType = (Switch) dialogView.findViewById(R.id.switchDeviceType);
-                Spinner spinnerDeviceList = (Spinner) dialogView.findViewById(R.id.spinnerDeviceList);
+                    // Building the dialog menu to add devices
+                    AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+                    LayoutInflater inflater = getActivity().getLayoutInflater();
+                    final View dialogView = inflater.inflate(R.layout.add_device, null);
+                    dialogBuilder.setView(dialogView);
 
-                dialogBuilder.setTitle("Add device");
-                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        if (arrayDevice.size() != MAX_MARKERS) {
+                    final Switch switchDeviceType = (Switch) dialogView.findViewById(R.id.switchDeviceType);
+                    final Spinner spinnerDeviceList = (Spinner) dialogView.findViewById(R.id.spinnerDeviceList);
+
+                    DeviceSelectAdapter adapter;
+                    adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevices);
+
+                    spinnerDeviceList.setAdapter(adapter);
+
+                    // If the device type switch is clicked the spinner change it contents
+                    switchDeviceType.setOnClickListener(new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View view) {
+                            DeviceSelectAdapter adapter;
+
+                            if (switchDeviceType.isChecked())
+                                adapter = new DeviceSelectAdapter(getContext(), arrayAPDevices);
+                            else
+                                adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevices);
+
+                            spinnerDeviceList.setAdapter(adapter);
+
+                        }
+                    });
+
+                    dialogBuilder.setTitle("Add device");
+                    dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+
                             Marker marker = gMap.addMarker(new MarkerOptions()
                                     .position(INITIAL_POS_MARKER)
                                     .draggable(true));
 
-                            Device device = new Device();
+                            Device device = (Device) spinnerDeviceList.getSelectedItem();
                             device.setMarker(marker);
-                            device.setAP(switchDeviceType.isChecked());
-                            arrayDevice.add(device);
+                            //device.setAP(switchDeviceType.isChecked());
+                            arrayDevicesCreated.add(device);
 
                             CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
                             gMap.animateCamera(upd, 500, null);
+
                         }
-                        else
-                            Toast.makeText(getContext(), "Maximum number of devices reached", Toast.LENGTH_SHORT).show();
+                    });
+                    dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
 
-                    }
-                });
-                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                    }
-                });
-                AlertDialog b = dialogBuilder.create();
-                b.show();
-
+                        }
+                    });
+                    AlertDialog b = dialogBuilder.create();
+                    b.show();
                 }
+
+                else
+                    Toast.makeText(getContext(), "Maximum number of devices reached", Toast.LENGTH_SHORT).show();
+
+            }
 
         });
 
+    }
+
+    private void InitDevices() {
+        Device LightBlueBeacon = new Device();
+        Device PurpleBeacon = new Device();
+        Device GreenBeacon = new Device();
+
+        Device AP1 = new Device();
+        Device AP2 = new Device();
+        Device AP3 = new Device();
+
+        LightBlueBeacon.setName("Light Blue Beacon");
+        LightBlueBeacon.setMAC(LIGHTBLUE_MAC_BEACON);
+        LightBlueBeacon.setAP(false);
+
+        PurpleBeacon.setName("Purple Beacon");
+        PurpleBeacon.setMAC(PURPLE_MAC_BEACON);
+        PurpleBeacon.setAP(false);
+
+        GreenBeacon.setName("Green Beacon");
+        GreenBeacon.setMAC(GREEN_MAC_BEACON);
+        GreenBeacon.setAP(false);
+
+        AP1.setName("Access Point 1");
+        AP1.setAP(true);
+
+        AP2.setName("Access Point 2");
+        AP2.setAP(true);
+
+        AP3.setName("Access Point 3");
+        AP3.setAP(true);
+
+        arrayBeaconDevices.add(LightBlueBeacon);
+        arrayBeaconDevices.add(PurpleBeacon);
+        arrayBeaconDevices.add(GreenBeacon);
+
+        arrayAPDevices.add(AP1);
+        arrayAPDevices.add(AP2);
+        arrayAPDevices.add(AP3);
     }
 
     private double truncateNumber(double value, int decimals) {
@@ -356,7 +441,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     @Nullable
     private Device findDeviceByMarker(Marker marker) {
-        for (Device device : arrayDevice) {
+        for (Device device : arrayDevicesCreated) {
             if (device.getMarker().equals(marker))
                 return device;
         }

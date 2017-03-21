@@ -25,12 +25,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingTop="3dp"
+                    android:textStyle="bold"
                     android:text="Type: " />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingTop="9dp"
+                    android:textStyle="bold"
                     android:text="Device: " />
             </LinearLayout>
         </LinearLayout>
