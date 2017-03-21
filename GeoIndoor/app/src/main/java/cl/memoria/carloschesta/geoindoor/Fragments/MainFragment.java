@@ -60,13 +60,12 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final String LIGHTBLUE_MAC_BEACON = "C3:3C:D0:40:ED:64";
     private final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
     private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
-    private final String[] beaconsName = {"Light Blue", "Purple", "Green"};
 
-
-
+    
     private ArrayList<Device> arrayDevicesCreated;
-    private ArrayList<Device> arrayBeaconDevices;
-    private ArrayList<Device> arrayAPDevices;
+    private ArrayList<Device> arrayBeaconDevicesAvailable;
+    private ArrayList<Device> arrayAPDevicesAvailable;
+    private DeviceSelectAdapter adapter;
     private GoogleMap gMap;
     private MapView mMapView;
     private File f;
@@ -196,8 +195,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
 
         arrayDevicesCreated = new ArrayList<Device>();
-        arrayBeaconDevices = new ArrayList<Device>();
-        arrayAPDevices = new ArrayList<Device>();
+        arrayBeaconDevicesAvailable = new ArrayList<Device>();
+        arrayAPDevicesAvailable = new ArrayList<Device>();
 
         // Load initial Beacon devices
         InitDevices();
@@ -272,7 +271,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 TextView tvDeviceMAC = (TextView) v.findViewById(R.id.tvDeviceMAC);
                 TextView tvDeviceName = (TextView) v.findViewById(R.id.tvDeviceName);
 
-                Device device = findDeviceByMarker(marker);
+                Device device = findDeviceByMarker(marker, arrayDevicesCreated);
 
                 tvDeviceX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
                 tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
@@ -306,19 +305,20 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             public void onMarkerDragEnd(Marker marker) {  }
         });
 
+        // The device (marker) will be removed when it description is clicked
         gMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
-                int i = -1;
-                for (Device device : arrayDevicesCreated) {
-                    if (device.getMarker().equals(marker))
-                        i = arrayDevicesCreated.indexOf(device);
-                }
+                Device device = findDeviceByMarker(marker, arrayDevicesCreated);
+                arrayDevicesCreated.remove(device);
+                marker.remove();
 
-                if (i != -1) {
-                    arrayDevicesCreated.remove(i);
-                    marker.remove();
-                }
+                if (device.isAP())
+                    arrayAPDevicesAvailable.add(device);
+                else
+                    arrayBeaconDevicesAvailable.add(device);
+
+                adapter.notifyDataSetChanged();
 
             }
         });
@@ -338,8 +338,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     final Switch switchDeviceType = (Switch) dialogView.findViewById(R.id.switchDeviceType);
                     final Spinner spinnerDeviceList = (Spinner) dialogView.findViewById(R.id.spinnerDeviceList);
 
-                    DeviceSelectAdapter adapter;
-                    adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevices);
+                    adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevicesAvailable);
 
                     spinnerDeviceList.setAdapter(adapter);
 
@@ -351,9 +350,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                             DeviceSelectAdapter adapter;
 
                             if (switchDeviceType.isChecked())
-                                adapter = new DeviceSelectAdapter(getContext(), arrayAPDevices);
+                                adapter = new DeviceSelectAdapter(getContext(), arrayAPDevicesAvailable);
                             else
-                                adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevices);
+                                adapter = new DeviceSelectAdapter(getContext(), arrayBeaconDevicesAvailable);
 
                             spinnerDeviceList.setAdapter(adapter);
 
@@ -370,8 +369,15 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                             Device device = (Device) spinnerDeviceList.getSelectedItem();
                             device.setMarker(marker);
-                            //device.setAP(switchDeviceType.isChecked());
+
                             arrayDevicesCreated.add(device);
+
+                            if (device.isAP())
+                                arrayAPDevicesAvailable.remove(device);
+                            else
+                                arrayBeaconDevicesAvailable.remove(device);
+
+                            adapter.notifyDataSetChanged();
 
                             CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
                             gMap.animateCamera(upd, 500, null);
@@ -426,13 +432,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         AP3.setName("Access Point 3");
         AP3.setAP(true);
 
-        arrayBeaconDevices.add(LightBlueBeacon);
-        arrayBeaconDevices.add(PurpleBeacon);
-        arrayBeaconDevices.add(GreenBeacon);
+        arrayBeaconDevicesAvailable.add(LightBlueBeacon);
+        arrayBeaconDevicesAvailable.add(PurpleBeacon);
+        arrayBeaconDevicesAvailable.add(GreenBeacon);
 
-        arrayAPDevices.add(AP1);
-        arrayAPDevices.add(AP2);
-        arrayAPDevices.add(AP3);
+        arrayAPDevicesAvailable.add(AP1);
+        arrayAPDevicesAvailable.add(AP2);
+        arrayAPDevicesAvailable.add(AP3);
     }
 
     private double truncateNumber(double value, int decimals) {
@@ -440,8 +446,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     }
 
     @Nullable
-    private Device findDeviceByMarker(Marker marker) {
-        for (Device device : arrayDevicesCreated) {
+    private Device findDeviceByMarker(Marker marker, ArrayList<Device> arrayList) {
+        for (Device device : arrayList) {
             if (device.getMarker().equals(marker))
                 return device;
         }
