@@ -113,11 +113,14 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         faGetLocationButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_my_location_black_24dp));
 
         faSettingsButton.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+
                 LayoutInflater inflater = getActivity().getLayoutInflater();
                 final View dialogView = inflater.inflate(R.layout.distance_settings, null);
+
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
                 dialogBuilder.setView(dialogView);
 
                 final EditText etDistanceD = (EditText) dialogView.findViewById(R.id.etD);
@@ -130,6 +133,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                 dialogBuilder.setTitle("Set position");
                 dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+
                     public void onClick(DialogInterface dialog, int whichButton) {
 
                         SharedPreferences.Editor editor = prefs.edit();
@@ -142,10 +146,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     }
                 });
                 dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                    }
+                    public void onClick(DialogInterface dialog, int whichButton) {   }
                 });
+
                 AlertDialog b = dialogBuilder.create();
                 b.show();
             }
@@ -165,6 +168,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     Toast.makeText(getContext(), "Added devices are not the same type", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
+
 
             }
         });
@@ -285,6 +290,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             }
         });
 
+        // Update position when the marker is dragged
         gMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
             @Override
             public void onMarkerDragStart(Marker marker) {  }
@@ -312,16 +318,16 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onInfoWindowClick(Marker marker) {
                 Device device = findDeviceByMarker(marker, arrayDevicesCreated);
-                arrayDevicesCreated.remove(device);
-                marker.remove();
 
                 if (device.isAP())
                     arrayAPDevicesAvailable.add(device);
                 else
                     arrayBeaconDevicesAvailable.add(device);
 
+                arrayDevicesCreated.remove(device);
                 adapter.notifyDataSetChanged();
 
+                marker.remove();
             }
         });
 
@@ -331,10 +337,11 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                 if (arrayDevicesCreated.size() != MAX_MARKERS) {
 
-                    // Building the dialog menu to add devices
-                    AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
                     LayoutInflater inflater = getActivity().getLayoutInflater();
                     final View dialogView = inflater.inflate(R.layout.add_device, null);
+
+                    // Building the dialog menu to add devices
+                    AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
                     dialogBuilder.setView(dialogView);
 
                     final Switch switchDeviceType = (Switch) dialogView.findViewById(R.id.switchDeviceType);
@@ -344,7 +351,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                     spinnerDeviceList.setAdapter(adapter);
 
-                    // If the device type switch is clicked the spinner change it contents
+                    // If the device type switch is clicked, the spinner change it contents
                     switchDeviceType.setOnClickListener(new View.OnClickListener() {
 
                         @Override
@@ -365,32 +372,32 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
 
-                            Marker marker;
+                            // Marker options
+                            MarkerOptions markerOptions = new MarkerOptions();
+                            markerOptions.draggable(true);
+                            markerOptions.position(INITIAL_POS_MARKER);
 
                             Device device = (Device) spinnerDeviceList.getSelectedItem();
 
-
+                            // Setting proper icon to marker
                             if (device.isAP()) {
-                                marker = gMap.addMarker(new MarkerOptions()
-                                        .position(INITIAL_POS_MARKER)
-                                        .draggable(true)
-                                        .icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_wifi))));
+                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_wifi)));
                                 arrayAPDevicesAvailable.remove(device);
                             }
                             else {
-                                marker = gMap.addMarker(new MarkerOptions()
-                                        .position(INITIAL_POS_MARKER)
-                                        .draggable(true)
-                                        .icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon))));
+                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon)));
                                 arrayBeaconDevicesAvailable.remove(device);
                             }
 
+                            // Creating the marker with the options
+                            Marker marker = gMap.addMarker(markerOptions);
                             device.setMarker(marker);
 
+                            // Adding a device to the created devices list
                             arrayDevicesCreated.add(device);
-
                             adapter.notifyDataSetChanged();
 
+                            // Move camera to the marker recently created
                             CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
                             gMap.animateCamera(upd, 500, null);
 
@@ -401,6 +408,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                         }
                     });
+
                     AlertDialog b = dialogBuilder.create();
                     b.show();
                 }
