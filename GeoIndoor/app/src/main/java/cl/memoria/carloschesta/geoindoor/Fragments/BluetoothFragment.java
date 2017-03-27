@@ -130,7 +130,7 @@ public class BluetoothFragment extends Fragment {
 
             if (hasPermissions()){
                 checkBluetoothLECompatibility();
-                connection.startScanLe(true);
+                //connection.startScanLe(true);
             }
             else
                 requestPerms();

@@ -4,6 +4,8 @@ package cl.memoria.carloschesta.geoindoor.Fragments;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -52,7 +54,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final int MAX_ZOOM = 6;
     private final int MIN_ZOOM = 1;
     private final int INIT_ZOOM = 4;
-    private final int MAX_MARKERS = 3;
+    private final int MAX_DEVICES = 3;
     private final int DECIMALS = 2;
     private final LatLng NORTHEAST = new LatLng(32,141);
     private final LatLng SOUTHWEST = new LatLng(5, 3);
@@ -62,23 +64,30 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final String LIGHTBLUE_MAC_BEACON = "C3:3C:D0:40:ED:64";
     private final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
     private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
-
+    private final String GREEN_BEACON_NAME = "Green Beacon";
+    private final String PURPLE_BEACON_NAME = "Purple Beacon";
+    private final String LIGHTBLUE_BEACON_NAME = "Light Blue Beacon";
+    private final String AP1_NAME = "Access Point 1";
+    private final String AP2_NAME = "Access Point 2";
+    private final String AP3_NAME = "Access Point 3";
 
     private ArrayList<Device> arrayDevicesCreated;
     private ArrayList<Device> arrayBeaconDevicesAvailable;
     private ArrayList<Device> arrayAPDevicesAvailable;
     private DeviceSelectAdapter adapter;
+    private ColorStateList floatingActionButtonOriginalColor;
     private GoogleMap gMap;
     private MapView mMapView;
+    private Marker userPositionMarker;
     private File f;
     private TextView tvX;
     private TextView tvY;
     private FloatingActionButton faAddMarkerButton;
     private FloatingActionButton faSettingsButton;
     private FloatingActionButton faGetLocationButton;
-    private float distanceD;
-    private float distanceI;
-    private float distanceJ;
+    private Float distanceD;
+    private Float distanceI;
+    private Float distanceJ;
 
 
     public MainFragment() {
@@ -91,15 +100,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_main, container, false);
-
-        // Import local preferences (distances between Devices)
-        final SharedPreferences prefs = getActivity().getSharedPreferences(
-                "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
-
-        distanceD = prefs.getFloat("distanceD", 0);
-        distanceI = prefs.getFloat("distanceI", 0);
-        distanceJ = prefs.getFloat("distanceJ", 0);
-
 
         tvX = (TextView) v.findViewById(R.id.tvX);
         tvY = (TextView) v.findViewById(R.id.tvY);
@@ -126,6 +126,22 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 final EditText etDistanceD = (EditText) dialogView.findViewById(R.id.etD);
                 final EditText etDistanceI = (EditText) dialogView.findViewById(R.id.etI);
                 final EditText etDistanceJ = (EditText) dialogView.findViewById(R.id.etJ);
+
+                // Import local preferences (distances between Devices)
+                final SharedPreferences prefs = getActivity().getSharedPreferences(
+                        "cl.memoria.carloschesta.geoindoor.PREFERENCE_MAIN_CONFIG", Context.MODE_PRIVATE);
+
+                distanceD = prefs.getFloat("distanceD", 0);
+                distanceI = prefs.getFloat("distanceI", 0);
+                distanceJ = prefs.getFloat("distanceJ", 0);
+
+                // Set real distances values
+                // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+                if (arrayDevicesCreated.size() == MAX_DEVICES) {
+                    distanceD = getDistanceD(arrayDevicesCreated);
+                    distanceI = getDistanceI(arrayDevicesCreated);
+                    distanceJ = getDistanceJ(arrayDevicesCreated);
+                }
 
                 etDistanceD.setText(String.valueOf(distanceD));
                 etDistanceI.setText(String.valueOf(distanceI));
@@ -159,7 +175,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onClick(View view) {
 
-                if (distanceD == 0 || distanceI == 0 || distanceJ == 0) {
+                if (distanceD == null || distanceI == null || distanceJ == null || distanceD == 0 || distanceI == 0 || distanceJ == 0) {
                     Toast.makeText(getContext(), "Distances between devices need to be configured first", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -169,6 +185,32 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     return;
                 }
 
+                if (arrayDevicesCreated.size() != MAX_DEVICES){
+                    Toast.makeText(getContext(), "Set at least three devices to get the current location", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Start geolocation
+                if (userPositionMarker == null){
+                    MarkerOptions userMarkerOptions = new MarkerOptions();
+                    userMarkerOptions.draggable(true);
+                    userMarkerOptions.position(INITIAL_POS_MARKER);
+                    userMarkerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_standing_frontal_man_silhouette)));
+
+                    userPositionMarker = gMap.addMarker(userMarkerOptions);
+                    userPositionMarker.setTag("userMarker");
+
+                    floatingActionButtonOriginalColor = faGetLocationButton.getBackgroundTintList();
+                    faGetLocationButton.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(0, 170, 0)));
+                }
+
+                // Stop geolocation
+                else{
+                    userPositionMarker.remove();
+                    userPositionMarker = null;
+
+                    faGetLocationButton.setBackgroundTintList(floatingActionButtonOriginalColor);
+                }
 
 
             }
@@ -268,27 +310,33 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public View getInfoContents(final Marker marker) {
 
-                View v = getActivity().getLayoutInflater().inflate(R.layout.device_info, null);
+                if (marker.getTag().equals("device")){
+                    View v = getActivity().getLayoutInflater().inflate(R.layout.device_info, null);
 
-                LatLng latLng = marker.getPosition();
+                    LatLng latLng = marker.getPosition();
 
-                TextView tvDeviceX = (TextView) v.findViewById(R.id.tvDeviceX);
-                TextView tvDeviceY = (TextView) v.findViewById(R.id.tvDeviceY);
-                TextView tvDeviceType = (TextView) v.findViewById(R.id.tvDeviceType);
-                TextView tvDeviceMAC = (TextView) v.findViewById(R.id.tvDeviceMAC);
-                TextView tvDeviceName = (TextView) v.findViewById(R.id.tvDeviceName);
+                    TextView tvDeviceX = (TextView) v.findViewById(R.id.tvDeviceX);
+                    TextView tvDeviceY = (TextView) v.findViewById(R.id.tvDeviceY);
+                    TextView tvDeviceType = (TextView) v.findViewById(R.id.tvDeviceType);
+                    TextView tvDeviceMAC = (TextView) v.findViewById(R.id.tvDeviceMAC);
+                    TextView tvDeviceName = (TextView) v.findViewById(R.id.tvDeviceName);
 
-                Device device = findDeviceByMarker(marker, arrayDevicesCreated);
+                    Device device = findDeviceByMarker(marker, arrayDevicesCreated);
 
-                tvDeviceX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
-                tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
-                tvDeviceType.setText(device.isAP() ? "Access Point" : "Beacon");
-                tvDeviceMAC.setText(device.getMAC());
-                tvDeviceName.setText(device.getName());
+                    tvDeviceX.setText(String.valueOf(truncateNumber(latLng.longitude, DECIMALS)));
+                    tvDeviceY.setText(String.valueOf((truncateNumber(latLng.latitude, DECIMALS))));
+                    tvDeviceType.setText(device.isAP() ? "Access Point" : "Beacon");
+                    tvDeviceMAC.setText(device.getMAC());
+                    tvDeviceName.setText(device.getName());
 
-                return v;
+                    return v;
+                }
+
+                return null;
             }
         });
+
+
 
         // Update position when the marker is dragged
         gMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
@@ -335,7 +383,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             @Override
             public void onClick(View view) {
 
-                if (arrayDevicesCreated.size() != MAX_MARKERS) {
+                if (arrayDevicesCreated.size() != MAX_DEVICES) {
 
                     LayoutInflater inflater = getActivity().getLayoutInflater();
                     final View dialogView = inflater.inflate(R.layout.add_device, null);
@@ -385,12 +433,19 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                                 arrayAPDevicesAvailable.remove(device);
                             }
                             else {
-                                markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon)));
+                                if (device.getName().equals(LIGHTBLUE_BEACON_NAME))
+                                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_lightblue)));
+                                if (device.getName().equals(PURPLE_BEACON_NAME))
+                                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_purple)));
+                                if (device.getName().equals(GREEN_BEACON_NAME))
+                                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_green)));
                                 arrayBeaconDevicesAvailable.remove(device);
                             }
 
                             // Creating the marker with the options
                             Marker marker = gMap.addMarker(markerOptions);
+                            marker.setTag("device");
+
                             device.setMarker(marker);
 
                             // Adding a device to the created devices list
@@ -431,25 +486,25 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         Device AP2 = new Device();
         Device AP3 = new Device();
 
-        LightBlueBeacon.setName("Light Blue Beacon");
+        LightBlueBeacon.setName(LIGHTBLUE_BEACON_NAME);
         LightBlueBeacon.setMAC(LIGHTBLUE_MAC_BEACON);
         LightBlueBeacon.setAP(false);
 
-        PurpleBeacon.setName("Purple Beacon");
+        PurpleBeacon.setName(PURPLE_BEACON_NAME);
         PurpleBeacon.setMAC(PURPLE_MAC_BEACON);
         PurpleBeacon.setAP(false);
 
-        GreenBeacon.setName("Green Beacon");
+        GreenBeacon.setName(GREEN_BEACON_NAME);
         GreenBeacon.setMAC(GREEN_MAC_BEACON);
         GreenBeacon.setAP(false);
 
-        AP1.setName("Access Point 1");
+        AP1.setName(AP1_NAME);
         AP1.setAP(true);
 
-        AP2.setName("Access Point 2");
+        AP2.setName(AP2_NAME);
         AP2.setAP(true);
 
-        AP3.setName("Access Point 3");
+        AP3.setName(AP3_NAME);
         AP3.setAP(true);
 
         arrayBeaconDevicesAvailable.add(LightBlueBeacon);
@@ -488,5 +543,52 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             }
         }
         return true;
+    }
+
+    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    private float getDistanceD(ArrayList<Device> devices) {
+        return (float) getDistanceBetweenTwoDevices(devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME)), devices.get(getDeviceIndex(devices, GREEN_BEACON_NAME)));
+    }
+
+    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    private float getDistanceJ(ArrayList<Device> devices) {
+        Device greenBeacon = devices.get(getDeviceIndex(devices, GREEN_BEACON_NAME));
+        Device purpleBeacon = devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME));
+        Device lightblueBeacon = devices.get(getDeviceIndex(devices, LIGHTBLUE_BEACON_NAME));
+
+        double a = getDistanceBetweenTwoDevices(greenBeacon, purpleBeacon);
+        double b = getDistanceBetweenTwoDevices(lightblueBeacon, purpleBeacon);
+        double c = getDistanceBetweenTwoDevices(greenBeacon, lightblueBeacon);
+        double s = (a + b + c) / 2.0;
+
+        return (float) (Math.pow(s * (s - a) * (s - b) * (s - c), 0.5) * (2 / a));
+    }
+
+    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    private float getDistanceI(ArrayList<Device> devices) {
+        Device purpleBeacon = devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME));
+        Device lightblueBeacon = devices.get(getDeviceIndex(devices, LIGHTBLUE_BEACON_NAME));
+
+        double hypotenuse = getDistanceBetweenTwoDevices(purpleBeacon, lightblueBeacon);
+
+        return (float) Math.pow(Math.pow(hypotenuse, 2) - Math.pow(getDistanceJ(devices), 2), 0.5);
+    }
+
+    private double getDistanceBetweenTwoDevices(Device device1, Device device2) {
+        double x1 = device1.getMarker().getPosition().longitude;
+        double y1 = device1.getMarker().getPosition().latitude;
+        double x2 = device2.getMarker().getPosition().longitude;
+        double y2 = device2.getMarker().getPosition().latitude;
+
+        return Math.pow(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2), 0.5);
+    }
+
+    private int getDeviceIndex(ArrayList<Device> devices, String name) {
+        for (int i = 0; i < devices.size(); i++) {
+            if (devices.get(i).getName().equals(name))
+                return i;
+        }
+
+        return -1;
     }
 }
