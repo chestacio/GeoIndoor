@@ -19,7 +19,7 @@
 
             <ImageView
                 android:id="@+id/imageView"
-                android:layout_width="77dp"
+                android:layout_width="45dp"
                 android:layout_height="match_parent"
                 app:srcCompat="@drawable/ic_place_black_24dp" />
         </LinearLayout>
@@ -37,12 +37,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
-                    android:text="Name: " />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
                     android:text="X: " />
 
                 <TextView
@@ -52,19 +46,6 @@
                     android:textStyle="bold"
                     android:text="Y: " />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textStyle="bold"
-                    android:text="Type: " />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:text="MAC: " />
-
             </LinearLayout>
 
         </LinearLayout>
@@ -72,48 +53,26 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="fill_parent"
-            android:paddingRight="@dimen/activity_horizontal_margin"
             android:layout_weight="1">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:paddingRight="@dimen/activity_horizontal_margin"
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tvDeviceName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Name" />
-
-                <TextView
-                    android:id="@+id/tvDeviceX"
+                    android:id="@+id/tvUserX"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1" />
 
                 <TextView
-                    android:id="@+id/tvDeviceY"
+                    android:id="@+id/tvUserY"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1" />
-
-                <TextView
-                    android:id="@+id/tvDeviceType"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_weight="1"
-                    android:text="Device" />
-
-                <TextView
-                    android:id="@+id/tvDeviceMAC"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="00:11:22:33" />
 
             </LinearLayout>
 

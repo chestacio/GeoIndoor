@@ -38,8 +38,8 @@ public class MainActivity extends AppCompatActivity {
         viewPagerAdapter = new ViewPagerAdapter(getSupportFragmentManager());
 
         viewPagerAdapter.addFragments(new MainFragment(), "Main");
-        viewPagerAdapter.addFragments(new WifiFragment(), "WiFi");
-        viewPagerAdapter.addFragments(new BluetoothFragment(), "Bluetooth");
+        //viewPagerAdapter.addFragments(new WifiFragment(), "WiFi");
+        //viewPagerAdapter.addFragments(new BluetoothFragment(), "Bluetooth");
 
         viewPager.setAdapter(viewPagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
