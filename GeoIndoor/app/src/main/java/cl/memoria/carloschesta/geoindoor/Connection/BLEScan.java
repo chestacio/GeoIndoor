@@ -7,8 +7,10 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 
 import cl.memoria.carloschesta.geoindoor.Fragments.BluetoothFragment;
+import cl.memoria.carloschesta.geoindoor.Fragments.MainFragment;
 import cl.memoria.carloschesta.geoindoor.Model.BluetoothLe;
 import uk.co.alt236.bluetoothlelib.device.BluetoothLeDevice;
 import uk.co.alt236.bluetoothlelib.device.beacon.BeaconType;
@@ -25,6 +27,7 @@ public class BLEScan {
     private BluetoothAdapter mBluetoothAdapter;
     private static final long SCAN_PERIOD = 10000000;
     private double beaconDistancesList[] = {0.0, 0.0, 0.0};
+
 
     public BLEScan(Activity activity, BluetoothAdapter bluetoothAdapter) {
         this.activity = activity;
@@ -48,8 +51,10 @@ public class BLEScan {
                             deviceDetected.setMAC(deviceLe.getAddress());
                             deviceDetected.setRSSID(String.valueOf(deviceLe.getRssi()));
 
-                            Log.i("MAC", device.getAddress());
-
+                            Log.i("BEACON", "Purple [0]:\t" + String.valueOf(beaconDistancesList[0]));
+                            Log.i("BEACON", "Green  [1]:\t" + String.valueOf(beaconDistancesList[1]));
+                            Log.i("BEACON", "L BLue [2]:\t" + String.valueOf(beaconDistancesList[2]));
+                            Log.i("BEACON", "-------------------------------");
 
                             if (BeaconUtils.getBeaconType(deviceLe) == BeaconType.IBEACON){
                                 IBeaconDevice iBeacon = new IBeaconDevice(deviceLe);
@@ -70,7 +75,12 @@ public class BLEScan {
                                     beaconDistancesList[2] = iBeacon.getAccuracy();
                                 }
 
-                                BluetoothFragment.addBluetoothDevice(deviceDetected);
+                                //BluetoothFragment.addBluetoothDevice(deviceDetected);
+                                if (MainFragment.getCalculatedPositionMarker() != null) {
+                                    if (beaconDistancesList[0] != 0.0 && beaconDistancesList[1] != 0.0 && beaconDistancesList[2] != 0.)
+                                        MainFragment.setMarkerPosition(getCurrentLocation(MainFragment.getDistanceD(), MainFragment.getDistanceI(), MainFragment.getDistanceJ()));
+                                }
+
                             }
 
                         }

@@ -1,6 +1,7 @@
 package cl.memoria.carloschesta.geoindoor.Fragments;
 
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -38,9 +39,11 @@ import com.google.android.gms.maps.model.TileOverlayOptions;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 import cl.memoria.carloschesta.geoindoor.Adapter.DeviceSelectAdapter;
+import cl.memoria.carloschesta.geoindoor.Connection.BLEScan;
 import cl.memoria.carloschesta.geoindoor.Libraries.MapBoxOfflineTileProvider;
 import cl.memoria.carloschesta.geoindoor.Libraries.SVGtoBitmap;
 import cl.memoria.carloschesta.geoindoor.Model.Device;
@@ -62,34 +65,41 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
     private final String PARKING_FILE_NAME = "parking_origin_0-145_HD.mbtiles";
     private final String LIGHTBLUE_MAC_BEACON = "C3:3C:D0:40:ED:64";
-    private final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
+    private static final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
     private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
     private final String GREEN_BEACON_NAME = "Green Beacon";
     private final String PURPLE_BEACON_NAME = "Purple Beacon";
     private final String LIGHTBLUE_BEACON_NAME = "Light Blue Beacon";
-    private final String AP1_NAME = "Access Point 1";
-    private final String AP2_NAME = "Access Point 2";
-    private final String AP3_NAME = "Access Point 3";
+    private static final String AP1_NAME = "Access Point TP-Link";
+    private final String AP2_NAME = "Access Point Buffalo with band-aid";
+    private final String AP3_NAME = "Access Point Buffalo";
+    private final String AP1_MAC = "F8:1A:67:F6:61:9C";
+    private final String AP2_MAC = "00:16:01:D1:85:3C";
+    private final String AP3_MAC = "00:16:01:D1:85:3C";
 
-    private ArrayList<Device> arrayDevicesCreated;
+
+    private static Marker calculatedPositionMarker;
+    private static Float distanceD;
+    private static Float distanceI;
+    private static Float distanceJ;
+
+    private static ArrayList<Device> arrayDevicesCreated;
     private ArrayList<Device> arrayBeaconDevicesAvailable;
     private ArrayList<Device> arrayAPDevicesAvailable;
+    private BLEScan connection;
+    private BluetoothAdapter mBluetoothAdapter;
     private DeviceSelectAdapter adapter;
     private ColorStateList floatingActionButtonOriginalColor;
     private GoogleMap gMap;
     private MapView mMapView;
     private Marker realUserPositionMarker;
-    private Marker userPositionMarker;
-    private File f;
+    private File file;
     private TextView tvX;
     private TextView tvY;
     private FloatingActionButton faAddMarkerButton;
     private FloatingActionButton faSettingsButton;
     private FloatingActionButton faGetLocationButton;
     private FloatingActionButton faAddRealPersonButton;
-    private Float distanceD;
-    private Float distanceI;
-    private Float distanceJ;
 
 
     public MainFragment() {
@@ -195,31 +205,54 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 }
 
                 // Start geolocation
-                if (userPositionMarker == null){
+                if (calculatedPositionMarker == null){
                     MarkerOptions userMarkerOptions = new MarkerOptions();
                     userMarkerOptions.draggable(true);
                     userMarkerOptions.position(INITIAL_POS_MARKER);
                     userMarkerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_position_icon)));
 
-                    userPositionMarker = gMap.addMarker(userMarkerOptions);
-                    userPositionMarker.setTag("currentPositionMarker");
+                    calculatedPositionMarker = gMap.addMarker(userMarkerOptions);
+                    calculatedPositionMarker.setTag("currentPositionMarker");
 
                     floatingActionButtonOriginalColor = faGetLocationButton.getBackgroundTintList();
                     faGetLocationButton.setBackgroundTintList(ColorStateList.valueOf(Color.rgb(0, 170, 0)));
 
                     faAddRealPersonButton.setVisibility(View.VISIBLE);
+
+                    if (areDevicesSameType(arrayDevicesCreated)) {
+
+                        if (arrayDevicesCreated.get(0).isAP()) {
+
+                        }
+
+                        else {
+                         connection.startScanLe(true);
+                        }
+                    }
+
                 }
 
                 // Stop geolocation
                 else{
-                    userPositionMarker.remove();
-                    userPositionMarker = null;
+                    calculatedPositionMarker.remove();
+                    calculatedPositionMarker = null;
 
                     faGetLocationButton.setBackgroundTintList(floatingActionButtonOriginalColor);
 
                     faAddRealPersonButton.setVisibility(View.GONE);
-                    realUserPositionMarker.remove();
-                    realUserPositionMarker = null;
+
+                    if (realUserPositionMarker != null) {
+                        realUserPositionMarker.remove();
+                        realUserPositionMarker = null;
+                    }
+
+                    if (arrayDevicesCreated.get(0).isAP()) {
+
+                    }
+
+                    else {
+                        connection.startScanLe(false);
+                    }
 
                 }
 
@@ -255,8 +288,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         }
 
         // Get a File from Assets reference to the MBTiles file.
-        f = new File(getActivity().getCacheDir()+"/" + PARKING_FILE_NAME);
-        if (!f.exists()) try {
+        file = new File(getActivity().getCacheDir()+"/" + PARKING_FILE_NAME);
+        if (!file.exists()) try {
 
             InputStream is = getActivity().getAssets().open(PARKING_FILE_NAME);
             int size = is.available();
@@ -264,7 +297,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             is.read(buffer);
             is.close();
 
-            FileOutputStream fos = new FileOutputStream(f);
+            FileOutputStream fos = new FileOutputStream(file);
             fos.write(buffer);
             fos.close();
         } catch (Exception e) { throw new RuntimeException(e); }
@@ -273,6 +306,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         arrayDevicesCreated = new ArrayList<Device>();
         arrayBeaconDevicesAvailable = new ArrayList<Device>();
         arrayAPDevicesAvailable = new ArrayList<Device>();
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        connection = new BLEScan(getActivity(), mBluetoothAdapter);
 
         // Load initial Beacon devices
         InitDevices();
@@ -291,7 +327,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         TileOverlayOptions opts = new TileOverlayOptions();
 
         // Create an instance of MapBoxOfflineTileProvider.
-        MapBoxOfflineTileProvider provider = new MapBoxOfflineTileProvider(f);
+        MapBoxOfflineTileProvider provider = new MapBoxOfflineTileProvider(file);
 
         // Set the tile provider on the TileOverlayOptions.
         opts.tileProvider(provider);
@@ -387,6 +423,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                 LatLng latLng = marker.getPosition();
 
+                tvX.setText(String.valueOf(latLng.longitude));
+                tvY.setText(String.valueOf(latLng.latitude));
+
                 if (marker.getTag().equals("device")){
                     View v = getActivity().getLayoutInflater().inflate(R.layout.device_info, null);
 
@@ -412,7 +451,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
             public void onMarkerDragEnd(Marker marker) {
 
                 if (marker.getTag().equals("userMarker")) {
-                    double distance = getDistanceBetweenTwoMarkers(marker, userPositionMarker);
+                    double distance = getDistanceBetweenTwoMarkers(marker, calculatedPositionMarker);
                     Toast.makeText(getContext(), "Distance: " + truncateNumber(distance, 2), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -435,7 +474,11 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     adapter.notifyDataSetChanged();
                 }
 
+                if (marker.getTag().equals("userMarker"))
+                    realUserPositionMarker = null;
+
                 marker.remove();
+
             }
         });
 
@@ -559,12 +602,15 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         GreenBeacon.setAP(false);
 
         AP1.setName(AP1_NAME);
+        AP1.setMAC(AP1_MAC);
         AP1.setAP(true);
 
         AP2.setName(AP2_NAME);
+        AP2.setMAC(AP2_MAC);
         AP2.setAP(true);
 
         AP3.setName(AP3_NAME);
+        AP3.setMAC(AP3_MAC);
         AP3.setAP(true);
 
         arrayBeaconDevicesAvailable.add(PurpleBeacon);
@@ -605,6 +651,70 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         return true;
     }
 
+    private double getDistanceBetweenTwoMarkers(Marker marker1, Marker marker2) {
+        double x1 = marker1.getPosition().longitude;
+        double y1 = marker1.getPosition().latitude;
+        double x2 = marker2.getPosition().longitude;
+        double y2 = marker2.getPosition().latitude;
+
+        return Math.pow(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2), 0.5);
+    }
+
+    private int getDeviceIndex(ArrayList<Device> devices, String name) {
+        for (int i = 0; i < devices.size(); i++) {
+            if (devices.get(i).getName().equals(name))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private static Device findDeviceByName(ArrayList<Device> devices, String name) {
+
+        for (Device device : devices) {
+            if (device.getName().equals(name))
+                return device;
+
+        }
+
+        return null;
+    }
+
+    public static void setMarkerPosition(LatLng position) {
+
+        LatLng posShift = null;
+
+        double x = position.longitude;
+        double y = position.latitude;
+
+        // First device is at (0,0) so there is a shift on marker position
+        if (arrayDevicesCreated.get(0).isAP())
+            posShift = findDeviceByName(arrayDevicesCreated, AP1_NAME).getMarker().getPosition();
+        else
+            posShift = findDeviceByName(arrayDevicesCreated, PURPLE_MAC_BEACON).getMarker().getPosition();
+
+        x += posShift.longitude;
+        y += posShift.latitude;
+
+        calculatedPositionMarker.setPosition(new LatLng(y, x));
+    }
+
+    public static Marker getCalculatedPositionMarker() {
+        return calculatedPositionMarker;
+    }
+
+    public static Float getDistanceD() {
+        return distanceD;
+    }
+
+    public static Float getDistanceI() {
+        return distanceI;
+    }
+
+    public static Float getDistanceJ() {
+        return distanceJ;
+    }
+
     // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
     private float getDistanceD(ArrayList<Device> devices) {
         return (float) getDistanceBetweenTwoMarkers(devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME)).getMarker(), devices.get(getDeviceIndex(devices, GREEN_BEACON_NAME)).getMarker());
@@ -632,23 +742,5 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         double hypotenuse = getDistanceBetweenTwoMarkers(purpleBeacon.getMarker(), lightblueBeacon.getMarker());
 
         return (float) Math.pow(Math.pow(hypotenuse, 2) - Math.pow(getDistanceJ(devices), 2), 0.5);
-    }
-
-    private double getDistanceBetweenTwoMarkers(Marker marker1, Marker marker2) {
-        double x1 = marker1.getPosition().longitude;
-        double y1 = marker1.getPosition().latitude;
-        double x2 = marker2.getPosition().longitude;
-        double y2 = marker2.getPosition().latitude;
-
-        return Math.pow(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2), 0.5);
-    }
-
-    private int getDeviceIndex(ArrayList<Device> devices, String name) {
-        for (int i = 0; i < devices.size(); i++) {
-            if (devices.get(i).getName().equals(name))
-                return i;
-        }
-
-        return -1;
     }
 }

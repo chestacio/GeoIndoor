@@ -42,8 +42,6 @@ public class BluetoothFragment extends Fragment {
     private static BluetoothLeAdapter adapter;
     private ListView listViewBluetooth;
     private BLEScan connection;
-    private FloatingActionButton floatingActingButton;
-
 
     public BluetoothFragment() {
         // Required empty public constructor
@@ -56,57 +54,6 @@ public class BluetoothFragment extends Fragment {
 
         int permissionCheck = ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION);
-
-        floatingActingButton = (FloatingActionButton) v.findViewById(R.id.floatingActingButtonBluetooth);
-        floatingActingButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_bluetooth_black_24dp));
-
-        floatingActingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-                LayoutInflater inflater = getActivity().getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.distance_settings, null);
-                dialogBuilder.setView(dialogView);
-
-                final EditText etD = (EditText) dialogView.findViewById(R.id.etD);
-                final EditText etI = (EditText) dialogView.findViewById(R.id.etI);
-                final EditText etJ = (EditText) dialogView.findViewById(R.id.etJ);
-
-                final SharedPreferences prefs = getActivity().getSharedPreferences(
-                        "cl.memoria.carloschesta.geoindoor.PREFERENCE_BLUETOOTH_CONFIG", Context.MODE_PRIVATE);
-
-                String d = prefs.getString("d", "");
-                String i = prefs.getString("i", "");
-                String j = prefs.getString("j", "");
-
-                etD.setText(d);
-                etI.setText(i);
-                etJ.setText(j);
-
-                dialogBuilder.setTitle("Set position");
-                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                        SharedPreferences.Editor editor = prefs.edit();
-
-                        editor.putString("d", etD.getText().toString());
-                        editor.putString("i", etI.getText().toString());
-                        editor.putString("j", etJ.getText().toString());
-
-                        editor.commit();
-                    }
-                });
-                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                    }
-                });
-                AlertDialog b = dialogBuilder.create();
-                b.show();
-
-            }
-        });
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -130,7 +77,7 @@ public class BluetoothFragment extends Fragment {
 
             if (hasPermissions()){
                 checkBluetoothLECompatibility();
-                //connection.startScanLe(true);
+                connection.startScanLe(true);
             }
             else
                 requestPerms();

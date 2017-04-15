@@ -31,6 +31,10 @@ public class WifiConnection extends Timer{
     private Timer timer;
     private double APList[] = {0.0, 0.0, 0.0};
 
+    private final String AP1_MAC = "F8:1A:67:F6:61:9C";
+    private final String AP2_MAC = "00:16:01:D1:85:3C";
+    private final String AP3_MAC = "00:16:01:D1:85:3C";
+
     public WifiConnection(Activity activity, WifiManager wifiManager) {
         this.activity = activity;
         this.wifiManager = wifiManager;
@@ -67,17 +71,29 @@ public class WifiConnection extends Timer{
                             size = size - 1;
                             while (size >= 0)
                             {
-                                WiFi asd = new WiFi();
-                                asd.setMAC(results.get(size).BSSID);
-                                asd.setSSID(results.get(size).SSID);
-                                asd.setRSSID(String.valueOf(results.get(size).level));
-                                asd.setFreq(String.valueOf(results.get(size).frequency));
+                                WiFi AP = new WiFi();
+                                AP.setMAC(results.get(size).BSSID);
+                                AP.setSSID(results.get(size).SSID);
+                                AP.setRSSID(String.valueOf(results.get(size).level));
+                                AP.setFreq(String.valueOf(results.get(size).frequency));
 
-                                asd.setDistance(String.valueOf(calculateDistance(results.get(size).level, results.get(size).frequency)));
+                                AP.setDistance(String.valueOf(calculateDistance(results.get(size).level, results.get(size).frequency)));
 
-                                WifiFragment.addWifiToList(asd);
+                                if (AP.getMAC().equals(AP1_MAC))
+                                    APList[0] = Double.parseDouble(AP.getDistance());
+
+                                if (AP.getMAC().equals(AP2_MAC))
+                                    APList[1] = Double.parseDouble(AP.getDistance());
+
+                                if (AP.getMAC().equals(AP3_MAC))
+                                    APList[2] = Double.parseDouble(AP.getDistance());
+
+                                if (AP.getMAC().equalsIgnoreCase("1C:5F:2B:FC:FE:B8")){
+                                    WifiFragment.addWifiToList(AP);
+                                    WifiFragment.adapterNotifyDataSetChanged();
+                                }
+
                                 size--;
-                                WifiFragment.adapterNotifyDataSetChanged();
                             }
                         }
                         catch (Exception e)
@@ -88,7 +104,7 @@ public class WifiConnection extends Timer{
                 });
 
             }
-        }, 0, 2000);
+        }, 0, 300);
     }
 
     private double calculateDistance(double signalLevelInDb, double freqInMHz) {

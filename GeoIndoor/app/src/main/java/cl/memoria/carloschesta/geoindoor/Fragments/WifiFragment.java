@@ -34,7 +34,6 @@ public class WifiFragment extends Fragment {
     private static ArrayList<WiFi> deviceList;
     private static WifiAdapter adapter;
     private WifiManager wifiManager;
-    private FloatingActionButton floatingActingButton;
     private WifiConnection wifiConnection;
 
     public WifiFragment() {
@@ -47,57 +46,6 @@ public class WifiFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v =  inflater.inflate(R.layout.fragment_wifi, container, false);
-
-        floatingActingButton = (FloatingActionButton) v.findViewById(R.id.floatingActingButtonWifi);
-        floatingActingButton.setImageDrawable(ContextCompat.getDrawable(this.getContext(), R.drawable.ic_wifi_black_24dp));
-
-        floatingActingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
-                LayoutInflater inflater = getActivity().getLayoutInflater();
-                final View dialogView = inflater.inflate(R.layout.distance_settings, null);
-                dialogBuilder.setView(dialogView);
-
-                final EditText etD = (EditText) dialogView.findViewById(R.id.etD);
-                final EditText etI = (EditText) dialogView.findViewById(R.id.etI);
-                final EditText etJ = (EditText) dialogView.findViewById(R.id.etJ);
-
-                final SharedPreferences prefs = getActivity().getSharedPreferences(
-                        "cl.memoria.carloschesta.geoindoor.PREFERENCE_WIFI_CONFIG", Context.MODE_PRIVATE);
-
-                String d = prefs.getString("d", "");
-                String i = prefs.getString("i", "");
-                String j = prefs.getString("j", "");
-
-                etD.setText(d);
-                etI.setText(i);
-                etJ.setText(j);
-
-                dialogBuilder.setTitle("Set position");
-                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                        SharedPreferences.Editor editor = prefs.edit();
-
-                        editor.putString("d", etD.getText().toString());
-                        editor.putString("i", etI.getText().toString());
-                        editor.putString("j", etJ.getText().toString());
-
-                        editor.commit();
-                    }
-                });
-                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-
-                    }
-                });
-                AlertDialog b = dialogBuilder.create();
-                b.show();
-
-            }
-        });
 
         listViewWifi = (ListView) v.findViewById(R.id.wifiListView);
         deviceList = new ArrayList<WiFi>();
