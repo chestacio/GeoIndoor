@@ -9,6 +9,9 @@ import android.util.Log;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import cl.memoria.carloschesta.geoindoor.Fragments.BluetoothFragment;
 import cl.memoria.carloschesta.geoindoor.Fragments.MainFragment;
 import cl.memoria.carloschesta.geoindoor.Model.BluetoothLe;
@@ -20,19 +23,22 @@ import uk.co.alt236.bluetoothlelib.device.beacon.ibeacon.IBeaconDevice;
 /**
  * Created by Carlos on 14-08-2016.
  */
-public class BLEScan {
+public class BLeConnection {
 
     private Activity activity;
     private Handler mHandler;
     private BluetoothAdapter mBluetoothAdapter;
     private static final long SCAN_PERIOD = 10000000;
+    private final int BLE = 1;
     private double beaconDistancesList[] = {0.0, 0.0, 0.0};
+    private int counter;
 
 
-    public BLEScan(Activity activity, BluetoothAdapter bluetoothAdapter) {
+    public BLeConnection(Activity activity, BluetoothAdapter bluetoothAdapter) {
         this.activity = activity;
         mHandler = new Handler();
         mBluetoothAdapter = bluetoothAdapter;
+        counter = 0;
     }
 
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
@@ -63,22 +69,28 @@ public class BLEScan {
                                 if (iBeacon.getAddress().endsWith("F1:50:7A:27:67:4F")){
                                     deviceDetected.setColor("Purple");
                                     beaconDistancesList[0] = iBeacon.getAccuracy();
+                                    counter++;
                                 }
 
                                 else if (iBeacon.getAddress().endsWith("DB:2A:7D:35:34:F7")){
                                     deviceDetected.setColor("Green");
                                     beaconDistancesList[1] = iBeacon.getAccuracy();
+                                    counter++;
                                 }
 
                                 else if (iBeacon.getAddress().endsWith("C3:3C:D0:40:ED:64")){
                                     deviceDetected.setColor("Light Blue");
                                     beaconDistancesList[2] = iBeacon.getAccuracy();
+                                    counter++;
                                 }
 
                                 //BluetoothFragment.addBluetoothDevice(deviceDetected);
                                 if (MainFragment.getCalculatedPositionMarker() != null) {
-                                    if (beaconDistancesList[0] != 0.0 && beaconDistancesList[1] != 0.0 && beaconDistancesList[2] != 0.)
-                                        MainFragment.setMarkerPosition(getCurrentLocation(MainFragment.getDistanceD(), MainFragment.getDistanceI(), MainFragment.getDistanceJ()));
+                                    if (beaconDistancesList[0] != 0.0 && beaconDistancesList[1] != 0.0 && beaconDistancesList[2] != 0.) {
+                                        LatLng calcPos = getCurrentLocation(MainFragment.getDistanceD(), MainFragment.getDistanceI(), MainFragment.getDistanceJ());
+                                        MainFragment.setMarkerPosition(calcPos);
+                                        MainFragment.addDataToCSV((new Date()).getTime(), BLE, calcPos);
+                                    }
                                 }
 
                             }
@@ -99,13 +111,15 @@ public class BLEScan {
             },SCAN_PERIOD);
 
             mBluetoothAdapter.startLeScan(mLeScanCallback);
-        } else
+        } else {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            counter = 0;
+        }
 
     }
 
 
-    public LatLng getCurrentLocation(double d, double i, double j){
+    private LatLng getCurrentLocation(double d, double i, double j){
         double r1 = beaconDistancesList[0];
         double r2 = beaconDistancesList[1];
         double r3 = beaconDistancesList[2];
