@@ -60,6 +60,9 @@ import cl.memoria.carloschesta.geoindoor.Libraries.SVGtoBitmap;
 import cl.memoria.carloschesta.geoindoor.Model.Device;
 import cl.memoria.carloschesta.geoindoor.R;
 
+import static cl.memoria.carloschesta.geoindoor.Utils.Utils.getDistance;
+import static cl.memoria.carloschesta.geoindoor.Utils.Utils.truncateNumber;
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -73,19 +76,22 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng NORTHEAST = new LatLng(32,141);
     private final LatLng SOUTHWEST = new LatLng(5, 3);
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
-    private final LatLng INITIAL_POS_MARKER = new LatLng(18,74);
+    private final LatLng INITIAL_POS_MARKER = new LatLng(20.0001,80);
+    private final LatLng INITIAL_POS_DEVICE1 = new LatLng(20.00,80.00);
+    private final LatLng INITIAL_POS_DEVICE2 = new LatLng(13.51,80.00);
+    private final LatLng INITIAL_POS_DEVICE3 = new LatLng(20.01,73.50);
     private final String PARKING_FILE_NAME = "parking_origin_0-145_HD.mbtiles";
-    private final String LIGHTBLUE_MAC_BEACON = "C3:3C:D0:40:ED:64";
-    private final String GREEN_MAC_BEACON = "DB:2A:7D:35:34:F7";
-    private final String GREEN_BEACON_NAME = "Green Beacon";
-    private final String PURPLE_BEACON_NAME = "Purple Beacon";
-    private final String LIGHTBLUE_BEACON_NAME = "Light Blue Beacon";
+    private final String BEACON1_MAC = "F1:50:7A:27:67:4F";
+    private final String BEACON2_MAC = "DB:2A:7D:35:34:F7";
+    private final String BEACON3_MAC = "C3:3C:D0:40:ED:64";
+    private final String BEACON2_NAME = "Green Beacon";
+    private final String BEACON3_NAME = "Light Blue Beacon";
     private final String AP2_NAME = "Access Point Buffalo with band-aid";
     private final String AP3_NAME = "Access Point Buffalo";
     private final String AP1_MAC = "F8:1A:67:F6:61:9C";
     private final String AP2_MAC = "00:16:01:D1:85:3C";
-    private final String AP3_MAC = "00:16:01:D1:85:3C";
-    private static final String PURPLE_MAC_BEACON = "F1:50:7A:27:67:4F";
+    private final String AP3_MAC = "00:16:01:D2:6F:CE";
+    private static final String BEACON1_NAME = "Purple Beacon";
     private static final String AP1_NAME = "Access Point TP-Link";
 
     // Storage Permissions
@@ -101,12 +107,13 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private static Float distanceD;
     private static Float distanceI;
     private static Float distanceJ;
-
     private static ArrayList<Device> arrayDevicesCreated;
+
     private ArrayList<Device> arrayBeaconDevicesAvailable;
     private ArrayList<Device> arrayAPDevicesAvailable;
     private BLeConnection BLeConnection;
     private BluetoothAdapter mBluetoothAdapter;
+    private boolean devicesRecentlyMoved = false;
     private DeviceSelectAdapter adapter;
     private ColorStateList floatingActionButtonOriginalColor;
     private GoogleMap gMap;
@@ -172,10 +179,12 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
                 // Set real distances values
                 // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j) (Relative positions)
-                if (arrayDevicesCreated.size() == MAX_DEVICES) {
+                if (arrayDevicesCreated.size() == MAX_DEVICES && devicesRecentlyMoved) {
                     distanceD = getDistanceD(arrayDevicesCreated);
                     distanceI = getDistanceI(arrayDevicesCreated);
                     distanceJ = getDistanceJ(arrayDevicesCreated);
+
+                    devicesRecentlyMoved = false;
                 }
 
                 etDistanceD.setText(String.valueOf(truncateNumber(distanceD, 2)));
@@ -228,10 +237,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 }
 
 
-                /*data.add(new String[] {"India", "New Delhi"});
-                data.add(new String[] {"United States", "Washington D.C"});
-                data.add(new String[] {"Germany", "Berlin"});*/
-
                 // Start geolocation
                 if (calculatedPositionMarker == null) {
                     MarkerOptions calculatedPositionMarkerOptions = new MarkerOptions();
@@ -253,10 +258,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     csvData = new ArrayList<String[]>();
 
                     // Run geolocation
-                    /*if (arrayDevicesCreated.get(0).isAP())
+                    if (arrayDevicesCreated.get(0).isAP())
                         wifiConnection.run();
                     else
-                        BLeConnection.startScanLe(true);*/
+                        BLeConnection.startScanLe(true);
                 }
 
 
@@ -295,22 +300,28 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     // Saved at /storage/emulated/0/Documents
                     String csv = android.os.Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/" + csvNameFile;
                     CSVWriter csvWriter = null;
-                    try {
-                        csvWriter = new CSVWriter(new FileWriter(csv), ';');
-                        csvWriter.writeAll(csvData);
-                        csvWriter.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+
+                    // Write data if contains it
+                    if (!csvData.isEmpty()) {
+                        try {
+                            csvWriter = new CSVWriter(new FileWriter(csv), ';');
+                            csvWriter.writeAll(csvData);
+                            csvWriter.close();
+
+                            Toast.makeText(getContext(), "CSV file created successfully", Toast.LENGTH_SHORT).show();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     // Reset the csv array list
-                    csvData = null;
+                    csvData.clear();
 
                     // Cancel geolocation algorithms
-                    /*if (arrayDevicesCreated.get(0).isAP())
+                    if (arrayDevicesCreated.get(0).isAP())
                         wifiConnection.cancel();
                     else
-                        BLeConnection.startScanLe(false);*/
+                        BLeConnection.startScanLe(false);
 
                 }
 
@@ -518,6 +529,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                     double distance = getDistanceBetweenTwoMarkers(marker, calculatedPositionMarker);
                     Toast.makeText(getContext(), "Distance: " + truncateNumber(distance, 2) + " meters", Toast.LENGTH_SHORT).show();
                 }
+
+                devicesRecentlyMoved = true;
             }
         });
 
@@ -590,22 +603,40 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                             // Marker options
                             MarkerOptions markerOptions = new MarkerOptions();
                             markerOptions.draggable(true);
-                            markerOptions.position(INITIAL_POS_MARKER);
 
                             Device device = (Device) spinnerDeviceList.getSelectedItem();
 
                             // Setting proper icon to marker
                             if (device.isAP()) {
                                 markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_wifi)));
+
+                                if (device.getName().equals(AP1_NAME))
+                                    markerOptions.position(INITIAL_POS_DEVICE1);
+
+                                if (device.getName().equals(AP2_NAME))
+                                    markerOptions.position(INITIAL_POS_DEVICE2);
+
+                                if (device.getName().equals(AP3_NAME))
+                                    markerOptions.position(INITIAL_POS_DEVICE3);
+
                                 arrayAPDevicesAvailable.remove(device);
                             }
                             else {
-                                if (device.getName().equals(LIGHTBLUE_BEACON_NAME))
-                                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_lightblue)));
-                                if (device.getName().equals(PURPLE_BEACON_NAME))
+
+                                if (device.getName().equals(BEACON1_NAME)) {
                                     markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_purple)));
-                                if (device.getName().equals(GREEN_BEACON_NAME))
+                                    markerOptions.position(INITIAL_POS_DEVICE1);
+                                }
+
+                                if (device.getName().equals(BEACON2_NAME)) {
                                     markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_green)));
+                                    markerOptions.position(INITIAL_POS_DEVICE2);
+                                }
+
+                                if (device.getName().equals(BEACON3_NAME)) {
+                                    markerOptions.icon(BitmapDescriptorFactory.fromBitmap(SVGtoBitmap.getBitmap(getContext(), R.drawable.ic_ble_beacon_icon_lightblue)));
+                                    markerOptions.position(INITIAL_POS_DEVICE3);
+                                }
                                 arrayBeaconDevicesAvailable.remove(device);
                             }
 
@@ -622,6 +653,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                             // Move camera to the marker recently created
                             CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
                             gMap.animateCamera(upd, 500, null);
+
+                            devicesRecentlyMoved = true;
 
                         }
                     });
@@ -653,16 +686,16 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         Device AP2 = new Device();
         Device AP3 = new Device();
 
-        LightBlueBeacon.setName(LIGHTBLUE_BEACON_NAME);
-        LightBlueBeacon.setMAC(LIGHTBLUE_MAC_BEACON);
+        LightBlueBeacon.setName(BEACON3_NAME);
+        LightBlueBeacon.setMAC(BEACON3_MAC);
         LightBlueBeacon.setAP(false);
 
-        PurpleBeacon.setName(PURPLE_BEACON_NAME);
-        PurpleBeacon.setMAC(PURPLE_MAC_BEACON);
+        PurpleBeacon.setName(BEACON1_NAME);
+        PurpleBeacon.setMAC(BEACON1_MAC);
         PurpleBeacon.setAP(false);
 
-        GreenBeacon.setName(GREEN_BEACON_NAME);
-        GreenBeacon.setMAC(GREEN_MAC_BEACON);
+        GreenBeacon.setName(BEACON2_NAME);
+        GreenBeacon.setMAC(BEACON2_MAC);
         GreenBeacon.setAP(false);
 
         AP1.setName(AP1_NAME);
@@ -684,10 +717,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         arrayAPDevicesAvailable.add(AP1);
         arrayAPDevicesAvailable.add(AP2);
         arrayAPDevicesAvailable.add(AP3);
-    }
-
-    private double truncateNumber(double value, int decimals) {
-        return Math.floor(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
     }
 
     @Nullable
@@ -739,7 +768,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         return null;
     }
 
-    public static void setMarkerPosition(LatLng position) {
+    public static LatLng shiftPosition(LatLng position) {
 
         LatLng posShift = null;
 
@@ -750,37 +779,44 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         if (arrayDevicesCreated.get(0).isAP())
             posShift = findDeviceByName(arrayDevicesCreated, AP1_NAME).getMarker().getPosition();
         else
-            posShift = findDeviceByName(arrayDevicesCreated, PURPLE_MAC_BEACON).getMarker().getPosition();
+            posShift = findDeviceByName(arrayDevicesCreated, BEACON1_NAME).getMarker().getPosition();
 
         x += posShift.longitude;
         y += posShift.latitude;
 
-        calculatedPositionMarker.setPosition(new LatLng(y, x));
+        LatLng calcPos =  new LatLng(y, x);
+
+        return calcPos;
+    }
+
+    public static void setMarkerPosition(LatLng position) {
+        calculatedPositionMarker.setPosition(position);
     }
 
     public static void addDataToCSV(long msFromEpoch, int deviceType, LatLng calcPos) {
 
-        String realLatString = "";
-        String realLngString = "";
+        LatLng shiftPos = shiftPosition(calcPos);
+
+        // Move the marker on the map
+        setMarkerPosition(shiftPos);
+
         String distErrorString = "";
+        String realPosString = "";
 
         if (realUserPositionMarker != null) {
             double realLat = realUserPositionMarker.getPosition().latitude;
             double realLng = realUserPositionMarker.getPosition().longitude;
 
-            double distError = getDistance(calcPos, realUserPositionMarker.getPosition());
+            double distError = getDistance(shiftPos, realUserPositionMarker.getPosition());
 
-            realLatString = String.valueOf(realLat);
-            realLngString = String.valueOf(realLng);
             distErrorString = String.valueOf(distError);
+
+            realPosString = String.format("%f,%f", realLng, realLat);
         }
 
         String timestamp = (new SimpleDateFormat("yyyy-M-dd hh:mm:ss")).format(new Date(msFromEpoch));
         String devType = String.valueOf(deviceType);
-        String calcLat = String.valueOf(calcPos.latitude);
-        String calcLng = String.valueOf(calcPos.longitude);
-        String calcPosString = String.format("%f,%f", calcLng, calcLat);
-        String realPosString = String.format("%f,%f", realLngString, realLatString);
+        String calcPosString = String.format("%f,%f", shiftPos.longitude, shiftPos.latitude);
 
         csvData.add(new String[] {timestamp, devType, calcPosString, realPosString, distErrorString});
     }
@@ -803,14 +839,14 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
     private float getDistanceD(ArrayList<Device> devices) {
-        return (float) getDistanceBetweenTwoMarkers(devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME)).getMarker(), devices.get(getDeviceIndex(devices, GREEN_BEACON_NAME)).getMarker());
+        return (float) getDistanceBetweenTwoMarkers(devices.get(getDeviceIndex(devices, BEACON1_NAME)).getMarker(), devices.get(getDeviceIndex(devices, BEACON2_NAME)).getMarker());
     }
 
     // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
     private float getDistanceJ(ArrayList<Device> devices) {
-        Device greenBeacon = devices.get(getDeviceIndex(devices, GREEN_BEACON_NAME));
-        Device purpleBeacon = devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME));
-        Device lightblueBeacon = devices.get(getDeviceIndex(devices, LIGHTBLUE_BEACON_NAME));
+        Device greenBeacon = devices.get(getDeviceIndex(devices, BEACON2_NAME));
+        Device purpleBeacon = devices.get(getDeviceIndex(devices, BEACON1_NAME));
+        Device lightblueBeacon = devices.get(getDeviceIndex(devices, BEACON3_NAME));
 
         double a = getDistanceBetweenTwoMarkers(greenBeacon.getMarker(), purpleBeacon.getMarker());
         double b = getDistanceBetweenTwoMarkers(lightblueBeacon.getMarker(), purpleBeacon.getMarker());
@@ -822,21 +858,11 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
     private float getDistanceI(ArrayList<Device> devices) {
-        Device purpleBeacon = devices.get(getDeviceIndex(devices, PURPLE_BEACON_NAME));
-        Device lightblueBeacon = devices.get(getDeviceIndex(devices, LIGHTBLUE_BEACON_NAME));
+        Device purpleBeacon = devices.get(getDeviceIndex(devices, BEACON1_NAME));
+        Device lightblueBeacon = devices.get(getDeviceIndex(devices, BEACON3_NAME));
 
         double hypotenuse = getDistanceBetweenTwoMarkers(purpleBeacon.getMarker(), lightblueBeacon.getMarker());
 
         return (float) Math.pow(Math.pow(hypotenuse, 2) - Math.pow(getDistanceJ(devices), 2), 0.5);
-    }
-
-    // Return Eucledian Distance
-    private static double getDistance(LatLng coord1, LatLng coord2) {
-        double lat1 = coord1.latitude;
-        double lng1 = coord1.longitude;
-        double lat2 = coord2.latitude;
-        double lng2 = coord2.longitude;
-
-        return Math.pow(Math.pow((lng1 - lng2), 2) + Math.pow((lat1 - lat2), 2), 0.5);
     }
 }
