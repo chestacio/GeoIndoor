@@ -1,5 +1,6 @@
 *.pdf
 Latex/*
+*.mbtiles
 
 
 # Created by https://www.gitignore.io/api/android,sublimetext,latex
