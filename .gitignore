@@ -352,3 +352,5 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/android,sublimetext,latex
 /bfg.jar
+/Latex/
+/Otras memorias/
