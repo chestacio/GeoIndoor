@@ -11,6 +11,7 @@ import com.google.android.gms.maps.model.LatLng;
 import java.text.DecimalFormat;
 import java.util.Date;
 
+import cl.memoria.carloschesta.geoindoor.Fragments.BluetoothFragment;
 import cl.memoria.carloschesta.geoindoor.Fragments.MainFragment;
 import cl.memoria.carloschesta.geoindoor.Model.BluetoothLe;
 import uk.co.alt236.bluetoothlelib.device.BluetoothLeDevice;
@@ -90,13 +91,14 @@ public class BLeConnection {
                                     Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3));
                                 }
 
-                                //<BluetoothFragment.addBluetoothDevice(deviceDetected);
+                                BluetoothFragment.addBluetoothDevice(deviceDetected);
+
                                 if (MainFragment.getCalculatedPositionMarker() != null) {
 
                                     if (isFullArray(beaconDistancesList1) && isFullArray(beaconDistancesList2) && isFullArray(beaconDistancesList3)){
 
                                         LatLng calcPos = getCurrentLocation(MainFragment.getDistanceD(), MainFragment.getDistanceI(), MainFragment.getDistanceJ());
-                                        MainFragment.addDataToCSV((new Date()).getTime(), BLE, calcPos);
+                                        MainFragment.setLocationAndAddDataToCSV((new Date()).getTime(), BLE, calcPos);
 
                                         Log.i("BEACON", "-------------------------------");
                                         Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1));

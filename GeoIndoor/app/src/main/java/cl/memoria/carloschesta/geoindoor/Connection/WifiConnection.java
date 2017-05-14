@@ -36,9 +36,9 @@ public class WifiConnection extends Timer{
     private List<ScanResult> results;
     private int size;
     private Timer timer;
-    private double APDistancesList1[] = {0.0, 0.0, 0.0, 0.0, 0.0};
-    private double APDistancesList2[] = {0.0, 0.0, 0.0, 0.0, 0.0};
-    private double APDistancesList3[] = {0.0, 0.0, 0.0, 0.0, 0.0};
+    private double APDistancesList1[] = {0.0, 0.0, 0.0, 0.0};
+    private double APDistancesList2[] = {0.0, 0.0, 0.0, 0.0};
+    private double APDistancesList3[] = {0.0, 0.0, 0.0, 0.0};
     private int counter1;
     private int counter2;
     private int counter3;
@@ -46,7 +46,7 @@ public class WifiConnection extends Timer{
     private static int WIFI = 0;
     private final String AP1_MAC = "F8:1A:67:F6:61:9C";
     private final String AP2_MAC = "00:16:01:D1:85:3C";
-    private final String AP3_MAC = "00:16:01:D1:85:3C";
+    private final String AP3_MAC = "00:16:01:D2:6F:CE";
 
     public WifiConnection(Activity activity, WifiManager wifiManager) {
         this.activity = activity;
@@ -76,12 +76,10 @@ public class WifiConnection extends Timer{
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        WifiFragment.clearList();
+                        //WifiFragment.clearList();
                         wifiManager.startScan();
                         results = wifiManager.getScanResults();
                         size = results.size();
-
-                        Log.i("SIZE", String.valueOf(size));
 
                         try
                         {
@@ -97,34 +95,35 @@ public class WifiConnection extends Timer{
                                 AP.setDistance(String.valueOf(calculateDistance(results.get(size).level, results.get(size).frequency)));
 
                                 if (AP.getMAC().equalsIgnoreCase(AP1_MAC)) {
-                                    APDistancesList1[counter1 % 5] = Double.parseDouble(AP.getDistance());
+                                    APDistancesList1[counter1 % APDistancesList1.length] = Double.parseDouble(AP.getDistance());
                                     counter1++;
                                     Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
+                                    WifiFragment.addWifiDevice(AP);
+
                                 }
 
                                 if (AP.getMAC().equalsIgnoreCase(AP2_MAC)) {
-                                    APDistancesList1[counter2 % 5] = Double.parseDouble(AP.getDistance());
+                                    APDistancesList2[counter2 % APDistancesList2.length] = Double.parseDouble(AP.getDistance());
                                     counter2++;
                                     Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2));
+                                    WifiFragment.addWifiDevice(AP);
+
                                 }
 
                                 if (AP.getMAC().equalsIgnoreCase(AP3_MAC)) {
-                                    APDistancesList1[counter3 % 5] = Double.parseDouble(AP.getDistance());
+                                    APDistancesList3[counter3 % APDistancesList3.length] = Double.parseDouble(AP.getDistance());
                                     counter3++;
                                     Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3));
+                                    WifiFragment.addWifiDevice(AP);
                                 }
 
-                                //if (AP.getMAC().equalsIgnoreCase("1C:5F:2B:FC:FE:B8")){
-                                    //WifiFragment.addWifiToList(AP);
-                                    //WifiFragment.adapterNotifyDataSetChanged();
-                                //}
 
                                 if (MainFragment.getCalculatedPositionMarker() != null) {
 
                                     if (isFullArray(APDistancesList1) && isFullArray(APDistancesList2) && isFullArray(APDistancesList3)){
 
                                         LatLng calcPos = getCurrentLocation(MainFragment.getDistanceD(), MainFragment.getDistanceI(), MainFragment.getDistanceJ());
-                                        MainFragment.addDataToCSV((new Date()).getTime(), WIFI, calcPos);
+                                        MainFragment.setLocationAndAddDataToCSV((new Date()).getTime(), WIFI, calcPos);
 
                                         Log.i("ACESS_POINT", "-------------------------------");
                                         Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
@@ -150,7 +149,7 @@ public class WifiConnection extends Timer{
                 });
 
             }
-        }, 0, 300);
+        }, 0, 250);
     }
 
     private double calculateDistance(double signalLevelInDb, double freqInMHz) {

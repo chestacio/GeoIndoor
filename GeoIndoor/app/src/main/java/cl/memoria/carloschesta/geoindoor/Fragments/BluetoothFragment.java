@@ -32,10 +32,12 @@ import cl.memoria.carloschesta.geoindoor.R;
 public class BluetoothFragment extends Fragment {
 
     private static final int REQUEST_ENABLE_BT = 1, PERMS_REQUEST_CODE = 123;
-    private BluetoothAdapter mBluetoothAdapter;
+
     private static ArrayList<BluetoothLe> devicesList;
     private static ArrayList<String> MACList;
     private static BluetoothLeAdapter adapter;
+
+    private BluetoothAdapter mBluetoothAdapter;
     private ListView listViewBluetooth;
     private BLeConnection connection;
 
@@ -92,6 +94,9 @@ public class BluetoothFragment extends Fragment {
     }
 
     public static void addBluetoothDevice(BluetoothLe device){
+        if (devicesList == null || adapter == null || MACList == null)
+            return;
+
         if(!MACList.contains(device.getMAC())){
             MACList.add(device.getMAC());
             devicesList.add(device);
@@ -105,8 +110,6 @@ public class BluetoothFragment extends Fragment {
         }
 
         adapter.notifyDataSetChanged();
-
- 
     }
 
     private boolean hasPermissions() {
@@ -184,5 +187,11 @@ public class BluetoothFragment extends Fragment {
             mBluetoothAdapter.enable();
             Toast.makeText(BluetoothFragment.this.getContext(), "Activando Bluetooth...", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setRetainInstance(true);
     }
 }

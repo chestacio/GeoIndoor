@@ -18,6 +18,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -77,9 +78,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final LatLng SOUTHWEST = new LatLng(5, 3);
     private final LatLng INITIAL_POS_CAMERA = new LatLng(18,74);
     private final LatLng INITIAL_POS_MARKER = new LatLng(20.0001,80);
-    private final LatLng INITIAL_POS_DEVICE1 = new LatLng(20.00,80.00);
-    private final LatLng INITIAL_POS_DEVICE2 = new LatLng(13.51,80.00);
-    private final LatLng INITIAL_POS_DEVICE3 = new LatLng(20.01,73.50);
+    private final LatLng INITIAL_POS_DEVICE1 = new LatLng(29.13,116.171);
+    private final LatLng INITIAL_POS_DEVICE2 = new LatLng(6.484,112.713);
+    private final LatLng INITIAL_POS_DEVICE3 = new LatLng(28.619,104.830);
     private final String PARKING_FILE_NAME = "parking_origin_0-145_HD.mbtiles";
     private final String BEACON1_MAC = "F1:50:7A:27:67:4F";
     private final String BEACON2_MAC = "DB:2A:7D:35:34:F7";
@@ -91,6 +92,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
     private final String AP1_MAC = "F8:1A:67:F6:61:9C";
     private final String AP2_MAC = "00:16:01:D1:85:3C";
     private final String AP3_MAC = "00:16:01:D2:6F:CE";
+
     private static final String BEACON1_NAME = "Purple Beacon";
     private static final String AP1_NAME = "Access Point TP-Link";
 
@@ -178,7 +180,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                 distanceJ = prefs.getFloat("distanceJ", 0);
 
                 // Set real distances values
-                // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j) (Relative positions)
                 if (arrayDevicesCreated.size() == MAX_DEVICES && devicesRecentlyMoved) {
                     distanceD = getDistanceD(arrayDevicesCreated);
                     distanceI = getDistanceI(arrayDevicesCreated);
@@ -351,6 +352,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         mMapView.onCreate(savedInstanceState);
         mMapView.onResume(); // needed to get the map to display immediately
         mMapView.getMapAsync(this);
+        mMapView.onSaveInstanceState(savedInstanceState);
 
         try {
             MapsInitializer.initialize(getActivity().getApplicationContext());
@@ -654,8 +656,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
                             CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_MARKER, INIT_ZOOM);
                             gMap.animateCamera(upd, 500, null);
 
-                            devicesRecentlyMoved = true;
-
                         }
                     });
                     dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -793,7 +793,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         calculatedPositionMarker.setPosition(position);
     }
 
-    public static void addDataToCSV(long msFromEpoch, int deviceType, LatLng calcPos) {
+    public static void setLocationAndAddDataToCSV(long msFromEpoch, int deviceType, LatLng calcPos) {
 
         LatLng shiftPos = shiftPosition(calcPos);
 
@@ -837,32 +837,74 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
         return distanceJ;
     }
 
-    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    // Assuming that device 1 is in (0,0), device 2 is in (0,d) and device 3 is in (i, j)
     private float getDistanceD(ArrayList<Device> devices) {
-        return (float) getDistanceBetweenTwoMarkers(devices.get(getDeviceIndex(devices, BEACON1_NAME)).getMarker(), devices.get(getDeviceIndex(devices, BEACON2_NAME)).getMarker());
+        int indexDevice1;
+        int indexDevice2;
+
+        if (devices.get(0).isAP()) {
+            indexDevice1 = getDeviceIndex(devices, AP1_NAME);
+            indexDevice2 = getDeviceIndex(devices, AP2_NAME);
+        }
+        else {
+            indexDevice1 = getDeviceIndex(devices, BEACON1_NAME);
+            indexDevice2 = getDeviceIndex(devices, BEACON2_NAME);
+        }
+
+        Device device1 = devices.get(indexDevice1);
+        Device device2 = devices.get(indexDevice2);
+
+        Marker marker1 = device1.getMarker();
+        Marker marker2 = device2.getMarker();
+
+        double distances = getDistanceBetweenTwoMarkers(marker1, marker2);
+
+        return (float) distances;
     }
 
-    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    // Assuming that device 1 is in (0,0), device 2 is in (0,d) and device 3 is in (i, j)
     private float getDistanceJ(ArrayList<Device> devices) {
-        Device greenBeacon = devices.get(getDeviceIndex(devices, BEACON2_NAME));
-        Device purpleBeacon = devices.get(getDeviceIndex(devices, BEACON1_NAME));
-        Device lightblueBeacon = devices.get(getDeviceIndex(devices, BEACON3_NAME));
 
-        double a = getDistanceBetweenTwoMarkers(greenBeacon.getMarker(), purpleBeacon.getMarker());
-        double b = getDistanceBetweenTwoMarkers(lightblueBeacon.getMarker(), purpleBeacon.getMarker());
-        double c = getDistanceBetweenTwoMarkers(greenBeacon.getMarker(), lightblueBeacon.getMarker());
+        Device device1;
+        Device device2;
+        Device device3;
+
+        if (devices.get(0).isAP()) {
+            device1 = devices.get(getDeviceIndex(devices, AP1_NAME)); // TP-Link
+            device2 = devices.get(getDeviceIndex(devices, AP2_NAME)); // Buffalo with Band-Aid
+            device3 = devices.get(getDeviceIndex(devices, AP3_NAME)); // Buffalo
+        }
+        else {
+            device1 = devices.get(getDeviceIndex(devices, BEACON1_NAME)); // Purple
+            device2 = devices.get(getDeviceIndex(devices, BEACON2_NAME)); // Green
+            device3 = devices.get(getDeviceIndex(devices, BEACON3_NAME)); // Light Blue
+        }
+
+        double a = getDistanceBetweenTwoMarkers(device2.getMarker(), device1.getMarker());
+        double b = getDistanceBetweenTwoMarkers(device3.getMarker(), device1.getMarker());
+        double c = getDistanceBetweenTwoMarkers(device2.getMarker(), device3.getMarker());
         double s = (a + b + c) / 2.0;
 
         return (float) (Math.pow(s * (s - a) * (s - b) * (s - c), 0.5) * (2 / a));
     }
 
-    // Assuming that purple beacon is in (0,0), green beacon is in (0,d) and light blue beacon is in (i, j)
+    // Assuming that device 1 is in (0,0), device 2 is in (0,d) and device 3 is in (i, j)
     private float getDistanceI(ArrayList<Device> devices) {
-        Device purpleBeacon = devices.get(getDeviceIndex(devices, BEACON1_NAME));
-        Device lightblueBeacon = devices.get(getDeviceIndex(devices, BEACON3_NAME));
+        Device device1;
+        Device device3;
 
-        double hypotenuse = getDistanceBetweenTwoMarkers(purpleBeacon.getMarker(), lightblueBeacon.getMarker());
+        if (devices.get(0).isAP()) {
+            device1 = devices.get(getDeviceIndex(devices, AP1_NAME)); // TP-Link
+            device3 = devices.get(getDeviceIndex(devices, AP3_NAME)); // Buffalo
+        }
+        else {
+            device1 = devices.get(getDeviceIndex(devices, BEACON1_NAME)); // Purple
+            device3 = devices.get(getDeviceIndex(devices, BEACON3_NAME)); // Light Blue
+        }
+
+        double hypotenuse = getDistanceBetweenTwoMarkers(device1.getMarker(), device3.getMarker());
 
         return (float) Math.pow(Math.pow(hypotenuse, 2) - Math.pow(getDistanceJ(devices), 2), 0.5);
     }
+
 }

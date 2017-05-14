@@ -2,22 +2,18 @@ package cl.memoria.carloschesta.geoindoor.Fragments;
 
 
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import cl.memoria.carloschesta.geoindoor.Adapter.WifiAdapter;
 import cl.memoria.carloschesta.geoindoor.Connection.WifiConnection;
@@ -30,9 +26,11 @@ import cl.memoria.carloschesta.geoindoor.R;
  */
 public class WifiFragment extends Fragment {
 
-    private ListView listViewWifi;
-    private static ArrayList<WiFi> deviceList;
+    private static ArrayList<WiFi> devicesList;
     private static WifiAdapter adapter;
+    private static ArrayList<String> MACList;
+
+    private ListView listViewWifi;
     private WifiManager wifiManager;
     private WifiConnection wifiConnection;
 
@@ -48,8 +46,9 @@ public class WifiFragment extends Fragment {
         View v =  inflater.inflate(R.layout.fragment_wifi, container, false);
 
         listViewWifi = (ListView) v.findViewById(R.id.wifiListView);
-        deviceList = new ArrayList<WiFi>();
-        adapter = new WifiAdapter(this.getContext(), deviceList);
+        devicesList = new ArrayList<WiFi>();
+        MACList = new ArrayList<String>();
+        adapter = new WifiAdapter(this.getContext(), devicesList);
         listViewWifi.setAdapter(adapter);
 
         wifiManager = (WifiManager) this.getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -74,8 +73,10 @@ public class WifiFragment extends Fragment {
         else{
             if (wifiConnection != null)
                 wifiConnection.cancel();
-            if(deviceList != null && adapter != null) {
-                deviceList.clear();
+
+            if (devicesList != null && MACList != null) {
+                devicesList.clear();
+                MACList.clear();
                 adapter.notifyDataSetChanged();
             }
         }
@@ -90,16 +91,37 @@ public class WifiFragment extends Fragment {
         }
     }
 
-    public static void adapterNotifyDataSetChanged(){
-        adapter.notifyDataSetChanged();
-    }
+    public static void addWifiDevice(WiFi device){
+        if (devicesList == null || adapter == null || MACList == null)
+            return;
 
-    public static void addWifiToList(WiFi wifi){
-        deviceList.add(wifi);
+        if(!MACList.contains(device.getMAC())){
+            MACList.add(device.getMAC());
+            devicesList.add(device);
+        }
+
+        for (WiFi dev: devicesList) {
+            if (device.getMAC().equals(dev.getMAC())) {
+                dev.setRSSID(device.getRSSID());
+                dev.setDistance(device.getDistance());
+
+                break;
+            }
+        }
+
+        adapter.sort(new Comparator<WiFi>() {
+            @Override
+            public int compare(WiFi wiFi, WiFi t1) {
+                return wiFi.getMAC().compareTo(t1.getMAC());
+            }
+        });
+
+        adapter.notifyDataSetChanged();
+        Log.i("CANTIDAD DEVICELIST", String.valueOf(devicesList.size()));
     }
 
     public static void clearList(){
-        deviceList.clear();
+        devicesList.clear();
         adapter.notifyDataSetChanged();
     }
 
