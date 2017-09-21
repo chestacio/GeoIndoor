@@ -12,7 +12,7 @@ public class Utils {
 
     public static boolean isFullArray(double[] list){
         for (int i = 0; i < list.length; i++) {
-            if (list[i] == 0.0)
+            if (list[i] < 0.1)
                 return false;
         }
         return true;

@@ -74,21 +74,21 @@ public class BLeConnection {
                                     deviceDetected.setColor("Purple");
                                     beaconDistancesList1[counter1 % 5] = iBeacon.getAccuracy();
                                     counter1++;
-                                    Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1));
+                                    //Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1));
                                 }
 
                                 else if (iBeacon.getAddress().endsWith("DB:2A:7D:35:34:F7")){
                                     deviceDetected.setColor("Green");
                                     beaconDistancesList2[counter2 % 5] = iBeacon.getAccuracy();
                                     counter2++;
-                                    Log.i("BEACON", "Green  [1]:\t" + listToString(beaconDistancesList2));
+                                    //Log.i("BEACON", "Green  [1]:\t" + listToString(beaconDistancesList2));
                                 }
 
                                 else if (iBeacon.getAddress().endsWith("C3:3C:D0:40:ED:64")){
                                     deviceDetected.setColor("Light Blue");
                                     beaconDistancesList3[counter3 % 5] = iBeacon.getAccuracy();
                                     counter3++;
-                                    Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3));
+                                    //Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3));
                                 }
 
                                 BluetoothFragment.addBluetoothDevice(deviceDetected);
@@ -101,9 +101,9 @@ public class BLeConnection {
                                         MainFragment.setLocationAndAddDataToCSV((new Date()).getTime(), BLE, calcPos);
 
                                         Log.i("BEACON", "-------------------------------");
-                                        Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1));
-                                        Log.i("BEACON", "Green  [1]:\t" + listToString(beaconDistancesList2));
-                                        Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3));
+                                        Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1) + "\t" + getListAverage(beaconDistancesList1));
+                                        Log.i("BEACON", "Green  [1]:\t" + listToString(beaconDistancesList2) + "\t" + getListAverage(beaconDistancesList2));
+                                        Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3) + "\t" + getListAverage(beaconDistancesList3));
                                         Log.i("BEACON", "-------------------------------");
 
                                         beaconDistancesList1 = new double[]{0, 0, 0, 0, 0};
@@ -145,7 +145,7 @@ public class BLeConnection {
         double x = (Math.pow(r1, 2) - Math.pow(r2, 2) + Math.pow(d, 2))/(2*d);
         double y = (Math.pow(r1, 2) - Math.pow(r3, 2) + Math.pow(i, 2) + Math.pow(j, 2))/(2*j) - (i/j) * x;
 
-        Log.d("XY", String.valueOf(new DecimalFormat("#.##").format(x)) + ", " + String.valueOf(new DecimalFormat("#.##").format(y)));
+        Log.i("XY", String.valueOf(new DecimalFormat("#.##").format(x)) + ", " + String.valueOf(new DecimalFormat("#.##").format(y)));
 
         return new LatLng(y, x);
     }

@@ -97,7 +97,7 @@ public class WifiConnection extends Timer{
                                 if (AP.getMAC().equalsIgnoreCase(AP1_MAC)) {
                                     APDistancesList1[counter1 % APDistancesList1.length] = Double.parseDouble(AP.getDistance());
                                     counter1++;
-                                    Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
+                                    //Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
                                     WifiFragment.addWifiDevice(AP);
 
                                 }
@@ -105,7 +105,7 @@ public class WifiConnection extends Timer{
                                 if (AP.getMAC().equalsIgnoreCase(AP2_MAC)) {
                                     APDistancesList2[counter2 % APDistancesList2.length] = Double.parseDouble(AP.getDistance());
                                     counter2++;
-                                    Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2));
+                                    //Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2));
                                     WifiFragment.addWifiDevice(AP);
 
                                 }
@@ -113,7 +113,7 @@ public class WifiConnection extends Timer{
                                 if (AP.getMAC().equalsIgnoreCase(AP3_MAC)) {
                                     APDistancesList3[counter3 % APDistancesList3.length] = Double.parseDouble(AP.getDistance());
                                     counter3++;
-                                    Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3));
+                                    //Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3));
                                     WifiFragment.addWifiDevice(AP);
                                 }
 
@@ -126,9 +126,9 @@ public class WifiConnection extends Timer{
                                         MainFragment.setLocationAndAddDataToCSV((new Date()).getTime(), WIFI, calcPos);
 
                                         Log.i("ACESS_POINT", "-------------------------------");
-                                        Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
-                                        Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2));
-                                        Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3));
+                                        Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1) + "\t" + getListAverage(APDistancesList1));
+                                        Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2) + "\t" + getListAverage(APDistancesList2));
+                                        Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3) + "\t" + getListAverage(APDistancesList3));
                                         Log.i("ACESS_POINT", "-------------------------------");
 
                                         APDistancesList1 = new double[]{0, 0, 0, 0, 0};
@@ -149,7 +149,7 @@ public class WifiConnection extends Timer{
                 });
 
             }
-        }, 0, 250);
+        }, 0, 500);
     }
 
     private double calculateDistance(double signalLevelInDb, double freqInMHz) {

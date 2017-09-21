@@ -117,7 +117,7 @@ public class WifiFragment extends Fragment {
         });
 
         adapter.notifyDataSetChanged();
-        Log.i("CANTIDAD DEVICELIST", String.valueOf(devicesList.size()));
+        //Log.i("CANTIDAD DEVICELIST", String.valueOf(devicesList.size()));
     }
 
     public static void clearList(){
