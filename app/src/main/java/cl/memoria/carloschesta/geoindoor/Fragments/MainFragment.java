@@ -433,10 +433,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback{
 
     private void setUpMap() {
         gMap.setMapType(GoogleMap.MAP_TYPE_NONE);
-        gMap.getUiSettings().setZoomControlsEnabled(true);
+        gMap.getUiSettings().setZoomControlsEnabled(false);
         gMap.getUiSettings().setMapToolbarEnabled(false);
-        gMap.getUiSettings().setCompassEnabled(true);
-
 
         // Initial camera position
         CameraUpdate upd = CameraUpdateFactory.newLatLngZoom(INITIAL_POS_CAMERA, INIT_ZOOM);
