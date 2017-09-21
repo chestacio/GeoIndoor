@@ -1,6 +1,8 @@
 *.pdf
 Latex/*
 *.mbtiles
+*csv
+*.xlsx
 
 
 # Created by https://www.gitignore.io/api/android,sublimetext,latex
