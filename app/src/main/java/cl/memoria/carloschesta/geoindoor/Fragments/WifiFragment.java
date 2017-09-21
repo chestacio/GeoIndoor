@@ -104,7 +104,7 @@ public class WifiFragment extends Fragment {
             if (device.getMAC().equals(dev.getMAC())) {
                 dev.setRSSID(device.getRSSID());
                 dev.setDistance(device.getDistance());
-
+                dev.setName(device.getName());
                 break;
             }
         }

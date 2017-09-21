@@ -38,12 +38,14 @@ public class WifiAdapter extends ArrayAdapter<WiFi> {
         TextView tvWifiRSSID = (TextView) row.findViewById(R.id.tvWifiRSSID);
         TextView tvWifiDistance = (TextView) row.findViewById(R.id.tvWifiDistance);
         TextView tvWifiFreq = (TextView) row.findViewById(R.id.tvWifiFreq);
+        TextView tvWifiName = (TextView) row.findViewById(R.id.tvWifiName);
 
         tvWifiMAC.setText(devices.get(position).getMAC());
         tvWifiRSSID.setText(devices.get(position).getRSSID());
         tvWifiSSID.setText(devices.get(position).getSSID());
         tvWifiDistance.setText(devices.get(position).getDistance());
         tvWifiFreq.setText(devices.get(position).getFreq());
+        tvWifiName.setText(devices.get(position).getName());
 
         return row;
     }

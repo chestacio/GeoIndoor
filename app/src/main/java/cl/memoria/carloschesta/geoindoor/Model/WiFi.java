@@ -9,6 +9,15 @@ public class WiFi {
     private String RSSID;
     private String freq;
     private String distance;
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getFreq() {
         return freq;

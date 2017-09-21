@@ -8,6 +8,15 @@ public class BluetoothLe {
     private String MAC;
     private String color;
     private String distance;
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getDistance() { return distance; }
 

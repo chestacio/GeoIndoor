@@ -40,6 +40,10 @@ public class BLeConnection {
     private int counter2;
     private int counter3;
 
+    private final String BEACON1_NAME = "Purple Beacon (P1)";
+    private final String BEACON2_NAME = "Green Beacon (P2)";
+    private final String BEACON3_NAME = "Light Blue Beacon (P3)";
+
 
     public BLeConnection(Activity activity, BluetoothAdapter bluetoothAdapter) {
         this.activity = activity;
@@ -74,6 +78,7 @@ public class BLeConnection {
                                     deviceDetected.setColor("Purple");
                                     beaconDistancesList1[counter1 % 5] = iBeacon.getAccuracy();
                                     counter1++;
+                                    deviceDetected.setName(BEACON1_NAME);
                                     //Log.i("BEACON", "Purple [0]:\t" + listToString(beaconDistancesList1));
                                 }
 
@@ -81,6 +86,7 @@ public class BLeConnection {
                                     deviceDetected.setColor("Green");
                                     beaconDistancesList2[counter2 % 5] = iBeacon.getAccuracy();
                                     counter2++;
+                                    deviceDetected.setName(BEACON2_NAME);
                                     //Log.i("BEACON", "Green  [1]:\t" + listToString(beaconDistancesList2));
                                 }
 
@@ -88,6 +94,7 @@ public class BLeConnection {
                                     deviceDetected.setColor("Light Blue");
                                     beaconDistancesList3[counter3 % 5] = iBeacon.getAccuracy();
                                     counter3++;
+                                    deviceDetected.setName(BEACON3_NAME);
                                     //Log.i("BEACON", "L Blue [2]:\t" + listToString(beaconDistancesList3));
                                 }
 

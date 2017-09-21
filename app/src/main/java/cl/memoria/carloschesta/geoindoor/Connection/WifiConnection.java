@@ -44,9 +44,13 @@ public class WifiConnection extends Timer{
     private int counter3;
 
     private static int WIFI = 0;
+
     private final String AP1_MAC = "F8:1A:67:F6:61:9C";
     private final String AP2_MAC = "00:16:01:D1:85:3C";
     private final String AP3_MAC = "00:16:01:D2:6F:CE";
+    private final String AP1_NAME = "Access Point TP-Link (P1)";
+    private final String AP2_NAME = "Access Point Buffalo with band-aid (P2)";
+    private final String AP3_NAME = "Access Point Buffalo (P3)";
 
     public WifiConnection(Activity activity, WifiManager wifiManager) {
         this.activity = activity;
@@ -98,6 +102,7 @@ public class WifiConnection extends Timer{
                                     APDistancesList1[counter1 % APDistancesList1.length] = Double.parseDouble(AP.getDistance());
                                     counter1++;
                                     //Log.i("ACESS_POINT", "AP1:\t" + listToString(APDistancesList1));
+                                    AP.setName(AP1_NAME);
                                     WifiFragment.addWifiDevice(AP);
 
                                 }
@@ -106,6 +111,7 @@ public class WifiConnection extends Timer{
                                     APDistancesList2[counter2 % APDistancesList2.length] = Double.parseDouble(AP.getDistance());
                                     counter2++;
                                     //Log.i("ACESS_POINT", "AP2:\t" + listToString(APDistancesList2));
+                                    AP.setName(AP2_NAME);
                                     WifiFragment.addWifiDevice(AP);
 
                                 }
@@ -114,6 +120,7 @@ public class WifiConnection extends Timer{
                                     APDistancesList3[counter3 % APDistancesList3.length] = Double.parseDouble(AP.getDistance());
                                     counter3++;
                                     //Log.i("ACESS_POINT", "AP3:\t" + listToString(APDistancesList3));
+                                    AP.setName(AP3_NAME);
                                     WifiFragment.addWifiDevice(AP);
                                 }
 

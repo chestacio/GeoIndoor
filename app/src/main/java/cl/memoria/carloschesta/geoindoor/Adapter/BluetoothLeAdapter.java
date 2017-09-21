@@ -36,11 +36,13 @@ public class BluetoothLeAdapter extends ArrayAdapter<BluetoothLe> {
         TextView tvBluetoothMAC = (TextView) row.findViewById(R.id.tvBluetoothMAC);
         TextView tvBluetoothDistance = (TextView) row.findViewById(R.id.tvBluetoothDistance);
         TextView tvBluetoothColor = (TextView) row.findViewById(R.id.tvBluetoothColor);
+        TextView tvBluetoothName = (TextView) row.findViewById(R.id.tvBluetoothName);
 
         tvBluetoothMAC.setText(devices.get(position).getMAC());
         tvBluetoothRSSID.setText(devices.get(position).getRSSID());
         tvBluetoothDistance.setText(devices.get(position).getDistance());
         tvBluetoothColor.setText(devices.get(position).getColor());
+        tvBluetoothName.setText(devices.get(position).getName());
 
         return row;
     }

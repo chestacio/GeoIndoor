@@ -9,8 +9,6 @@ import com.google.android.gms.maps.model.Marker;
 public class Device {
     private Marker marker;
     private boolean isAP;
-    private WiFi wifi;
-    private BluetoothLe bluetoothLe;
     private String MAC;
     private String name;
 
@@ -33,22 +31,6 @@ public class Device {
 
     public void setMAC(String MAC) {
         this.MAC = MAC;
-    }
-
-    public WiFi getWifi() {
-        return wifi;
-    }
-
-    public void setWifi(WiFi wifi) {
-        this.wifi = wifi;
-    }
-
-    public BluetoothLe getBluetoothLe() {
-        return bluetoothLe;
-    }
-
-    public void setBluetoothLe(BluetoothLe bluetoothLe) {
-        this.bluetoothLe = bluetoothLe;
     }
 
     public Marker getMarker() {
